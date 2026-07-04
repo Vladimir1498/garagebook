@@ -1,6 +1,6 @@
-import { useContext } from 'react'
+import { useContext, useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Sun, Moon, Monitor, Globe, Download, Trash2, Bell, FileText } from 'lucide-react'
+import { Sun, Moon, Monitor, Globe, Download, Trash2, Bell, FileText, Info } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { ThemeContext } from '../../contexts/ThemeContext'
 import PageWrapper from '../../components/layout/PageWrapper'
@@ -11,6 +11,7 @@ import PushToggle from '../../components/pwa/PushToggle'
 import { useState } from 'react'
 import api from '../../services/api'
 import toast from 'react-hot-toast'
+import { debugPWA } from '../../hooks/usePwaInstall'
 
 export default function SettingsPage() {
   const { t, i18n } = useTranslation()
@@ -19,6 +20,10 @@ export default function SettingsPage() {
   const [showDelete, setShowDelete] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [exportingPdf, setExportingPdf] = useState(false)
+  const [pwaIssues, setPwaIssues] = useState<string[]>([])
+  const [showPwaDebug, setShowPwaDebug] = useState(false)
+
+  useEffect(() => { debugPWA().then(setPwaIssues) }, [])
 
   const downloadBlob = (data: Blob, filename: string) => {
     const url = window.URL.createObjectURL(data)
@@ -110,6 +115,24 @@ export default function SettingsPage() {
               </label>
             ))}
           </div>
+        </div>
+
+        <div className="rounded-2xl border border-surface-200 bg-white p-6 dark:border-surface-700 dark:bg-surface-800">
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-semibold text-surface-900 dark:text-white">PWA статус</h3>
+            <button onClick={() => setShowPwaDebug(!showPwaDebug)} className="text-surface-400 hover:text-surface-600">
+              <Info className="h-5 w-5" />
+            </button>
+          </div>
+          {pwaIssues.length === 0 ? (
+            <p className="mt-2 text-sm text-emerald-600">PWA готов к установке</p>
+          ) : (
+            <div className="mt-2 space-y-1">
+              {pwaIssues.map((issue, i) => (
+                <p key={i} className="text-xs text-amber-600">⚠ {issue}</p>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="rounded-2xl border border-surface-200 bg-white p-6 dark:border-surface-700 dark:bg-surface-800">
