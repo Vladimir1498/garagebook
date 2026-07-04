@@ -1,20 +1,25 @@
 import { useState, useEffect } from 'react'
-import { Download, X, Smartphone, Share } from 'lucide-react'
+import { Download, X, Smartphone, Share, Check } from 'lucide-react'
 import { usePwaInstall } from '../../hooks/usePwaInstall'
 import Button from '../ui/Button'
 
 export default function MobileInstallBanner() {
-  const { canInstall, isMobile, platform, hasNativePrompt, promptInstall, dismiss, isInstalled } = usePwaInstall()
+  const { canInstall, platform, hasNativePrompt, promptInstall, dismiss, isInstalled } = usePwaInstall()
   const [show, setShow] = useState(false)
   const [dismissed, setDismissed] = useState(false)
   const [installing, setInstalling] = useState(false)
+  const [installed, setInstalled] = useState(false)
 
   useEffect(() => {
-    if (isMobile && !dismissed && !isInstalled) {
+    if (canInstall && !dismissed && !isInstalled) {
       const timer = setTimeout(() => setShow(true), 3000)
       return () => clearTimeout(timer)
     }
-  }, [isMobile, dismissed, isInstalled])
+  }, [canInstall, dismissed, isInstalled])
+
+  useEffect(() => {
+    if (isInstalled) { setShow(false); setInstalled(true) }
+  }, [isInstalled])
 
   if (!show || dismissed || isInstalled) return null
 
@@ -24,18 +29,13 @@ export default function MobileInstallBanner() {
   }
 
   const handleInstall = async () => {
-    if (hasNativePrompt) {
-      setInstalling(true)
-      try {
-        await promptInstall()
-      } catch (e) {}
-      setInstalling(false)
-    }
-    // Always show instructions as fallback
+    setInstalling(true)
+    const success = await promptInstall()
+    setInstalling(false)
+    if (success) setInstalled(true)
   }
 
   const isIOS = platform === 'ios'
-  const isAndroid = platform === 'android'
 
   return (
     <div className="fixed bottom-20 left-4 right-4 z-50 animate-slide-up md:hidden">
@@ -46,19 +46,15 @@ export default function MobileInstallBanner() {
           </div>
           <div className="flex-1">
             <p className="text-sm font-semibold text-surface-900 dark:text-white">
-              Установить GarageBook
+              {isIOS ? 'Добавить на экран' : 'Установить GarageBook'}
             </p>
             {isIOS ? (
               <p className="mt-0.5 text-xs text-surface-500">
                 Safari → <b>Поделиться</b> → <b>На экран Домой</b>
               </p>
-            ) : isAndroid ? (
-              <p className="mt-0.5 text-xs text-surface-500">
-                Chrome → <b>⋮</b> → <b>Установить приложение</b>
-              </p>
             ) : (
               <p className="mt-0.5 text-xs text-surface-500">
-                Добавьте на главный экран для быстрого доступа
+                Установите для быстрого доступа и работы офлайн
               </p>
             )}
           </div>
@@ -67,13 +63,21 @@ export default function MobileInstallBanner() {
           </button>
         </div>
         <div className="mt-3 flex gap-2">
-          {hasNativePrompt && (
+          {hasNativePrompt ? (
             <Button size="sm" onClick={handleInstall} loading={installing} className="flex-1">
               <Download className="h-4 w-4" /> Установить
             </Button>
+          ) : isIOS ? (
+            <Button size="sm" variant="secondary" onClick={handleDismiss} className="flex-1">
+              <Share className="h-4 w-4" /> Понятно
+            </Button>
+          ) : (
+            <Button size="sm" variant="secondary" onClick={handleDismiss} className="flex-1">
+              Понятно
+            </Button>
           )}
-          <Button size="sm" variant={hasNativePrompt ? 'ghost' : 'secondary'} onClick={handleDismiss} className={hasNativePrompt ? '' : 'flex-1'}>
-            {hasNativePrompt ? 'Позже' : 'Понятно'}
+          <Button size="sm" variant="ghost" onClick={handleDismiss}>
+            Позже
           </Button>
         </div>
       </div>

@@ -1,88 +1,72 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
+function getPlatform(): 'ios' | 'android' | 'desktop' {
+  const ua = navigator.userAgent.toLowerCase()
+  if (/iphone|ipad|ipod/.test(ua)) return 'ios'
+  if (/android/.test(ua)) return 'android'
+  return 'desktop'
+}
+
 export function usePwaInstall() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
-  const [canInstall, setCanInstall] = useState(false)
   const [isInstalled, setIsInstalled] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
   const [platform, setPlatform] = useState<'ios' | 'android' | 'desktop'>('desktop')
 
   useEffect(() => {
-    // Detect mobile
-    const ua = navigator.userAgent.toLowerCase()
-    const mobile = /android|iphone|ipad|ipod|mobile|windows phone/i.test(ua)
-    setIsMobile(mobile)
+    setPlatform(getPlatform())
 
-    // Detect platform
-    if (/iphone|ipad|ipod/i.test(ua)) setPlatform('ios')
-    else if (/android/i.test(ua)) setPlatform('android')
-    else setPlatform('desktop')
-
-    // Check if already installed
+    // Already installed?
     if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) {
       setIsInstalled(true)
       return
     }
 
-    // Check if dismissed today
+    // Dismissed today?
     const dismissedDate = localStorage.getItem('pwa_install_dismissed_date')
-    if (dismissedDate) {
-      const today = new Date().toDateString()
-      if (dismissedDate === today) {
-        return // Don't show again today
-      }
-    }
+    if (dismissedDate === new Date().toDateString()) return
 
-    // Android/Chrome: wait for beforeinstallprompt
+    // Listen for beforeinstallprompt (Android/Chrome/Edge)
     const handler = (e: Event) => {
       e.preventDefault()
       setDeferredPrompt(e as BeforeInstallPromptEvent)
-      setCanInstall(true)
     }
     window.addEventListener('beforeinstallprompt', handler)
 
-    // Show install prompt after delay for mobile
-    const timer = setTimeout(() => {
-      if (!window.matchMedia('(display-mode: standalone').matches) {
-        setCanInstall(true)
-      }
-    }, 5000)
-
-    const installed = () => { setIsInstalled(true); setCanInstall(false) }
+    const installed = () => setIsInstalled(true)
     window.addEventListener('appinstalled', installed)
 
     return () => {
-      clearTimeout(timer)
       window.removeEventListener('beforeinstallprompt', handler)
       window.removeEventListener('appinstalled', installed)
     }
   }, [])
 
-  const promptInstall = async () => {
-    if (!deferredPrompt) return
-    await deferredPrompt.prompt()
-    const { outcome } = await deferredPrompt.userChoice
-    if (outcome === 'accepted') {
-      setIsInstalled(true)
-      setCanInstall(false)
-    }
-    setDeferredPrompt(null)
-  }
+  const promptInstall = useCallback(async () => {
+    if (!deferredPrompt) return false
+    try {
+      await deferredPrompt.prompt()
+      const { outcome } = await deferredPrompt.userChoice
+      setDeferredPrompt(null)
+      if (outcome === 'accepted') {
+        setIsInstalled(true)
+        return true
+      }
+    } catch {}
+    return false
+  }, [deferredPrompt])
 
-  const dismiss = () => {
+  const dismiss = useCallback(() => {
     localStorage.setItem('pwa_install_dismissed_date', new Date().toDateString())
-    setCanInstall(false)
-  }
+  }, [])
 
   return {
-    canInstall: canInstall && !isInstalled,
+    canInstall: !isInstalled,
     isInstalled,
-    isMobile,
     platform,
     hasNativePrompt: !!deferredPrompt,
     promptInstall,
