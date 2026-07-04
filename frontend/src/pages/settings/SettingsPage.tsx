@@ -8,7 +8,6 @@ import Button from '../../components/ui/Button'
 import Select from '../../components/ui/Select'
 import Modal from '../../components/ui/Modal'
 import PushToggle from '../../components/pwa/PushToggle'
-import { useState } from 'react'
 import api from '../../services/api'
 import toast from 'react-hot-toast'
 import { debugPWA } from '../../hooks/usePwaInstall'
@@ -172,3 +171,4 @@ export default function SettingsPage() {
     </PageWrapper>
   )
 }
+

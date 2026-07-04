@@ -60,13 +60,6 @@ async function debugPWA(): Promise<string[]> {
   return issues
 }
 
-function getPlatform(): 'ios' | 'android' | 'desktop' {
-  const ua = navigator.userAgent.toLowerCase()
-  if (/iphone|ipad|ipod/.test(ua)) return 'ios'
-  if (/android/.test(ua)) return 'android'
-  return 'desktop'
-}
-
 export function usePwaInstall() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [isInstalled, setIsInstalled] = useState(false)
@@ -141,3 +134,4 @@ export function usePwaInstall() {
 }
 
 export { debugPWA }
+
