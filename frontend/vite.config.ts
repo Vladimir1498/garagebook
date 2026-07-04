@@ -27,12 +27,10 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        importScripts: ['/sw-custom.js'],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//, /^\/uploads\//],
         runtimeCaching: [
           {
-            // API: network-first with 10s timeout, cache fallback
             urlPattern: /^https?:\/\/.*\/api\/v1\/.*/i,
             handler: 'NetworkFirst',
             options: {
@@ -43,7 +41,6 @@ export default defineConfig({
             }
           },
           {
-            // Uploaded files: cache-first
             urlPattern: /^https?:\/\/.*\/uploads\//i,
             handler: 'CacheFirst',
             options: {
@@ -52,7 +49,6 @@ export default defineConfig({
             }
           },
           {
-            // Images: cache-first
             urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/,
             handler: 'CacheFirst',
             options: {
@@ -61,7 +57,6 @@ export default defineConfig({
             }
           },
           {
-            // Google Fonts: cache-first
             urlPattern: /^https:\/\/fonts\.googleapis\.com/,
             handler: 'StaleWhileRevalidate',
             options: { cacheName: 'google-fonts-stylesheets' }
