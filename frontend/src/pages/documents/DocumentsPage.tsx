@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FileText, Download, Trash2, Eye } from 'lucide-react'
+import { FileText, Download, Trash2, Eye, Lock } from 'lucide-react'
 import { useDocumentsList, useUploadDocument, useDeleteDocument } from '../../hooks/useDocuments'
 import { useCars } from '../../hooks/useCars'
 import PageWrapper from '../../components/layout/PageWrapper'
@@ -10,6 +10,7 @@ import Skeleton from '../../components/ui/Skeleton'
 import Badge from '../../components/ui/Badge'
 import FileDropzone from '../../components/ui/FileDropzone'
 import Select from '../../components/ui/Select'
+import Modal from '../../components/ui/Modal'
 import toast from 'react-hot-toast'
 
 const categoryLabels: Record<string, string> = {
@@ -28,13 +29,20 @@ export default function DocumentsPage() {
   const cars = carsData?.data?.data || []
   const [selectedCar, setSelectedCar] = useState(cars[0]?.id || '')
   const [category, setCategory] = useState('other')
+  const [showTierModal, setShowTierModal] = useState(false)
 
   const handleUpload = async (files: File[]) => {
     if (!selectedCar) { toast.error('Выберите автомобиль'); return }
     for (const file of files) {
       try {
         await uploadDocument.mutateAsync({ carId: selectedCar, file, category, name: file.name })
-      } catch {}
+      } catch (err: any) {
+        if (err.response?.status === 403) {
+          setShowTierModal(true)
+          return
+        }
+        toast.error(err.response?.data?.detail || 'Ошибка загрузки')
+      }
     }
     toast.success(`${files.length} файл(ов) загружено`)
   }

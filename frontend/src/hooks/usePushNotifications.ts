@@ -13,35 +13,43 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return outputArray
 }
 
+function detectPlatform(): 'ios' | 'android' | 'desktop' {
+  const ua = navigator.userAgent.toLowerCase()
+  if (/iphone|ipad|ipod/.test(ua)) return 'ios'
+  if (/android/.test(ua)) return 'android'
+  return 'desktop'
+}
+
+function isMobileDevice(): boolean {
+  return /android|iphone|ipad|ipod|mobile|windows phone/i.test(navigator.userAgent.toLowerCase())
+}
+
 export function usePushNotifications() {
   const [isSupported, setIsSupported] = useState(false)
   const [isSubscribed, setIsSubscribed] = useState(false)
   const [permission, setPermission] = useState<NotificationPermission>('default')
   const [loading, setLoading] = useState(false)
+  const [platform, setPlatform] = useState<'ios' | 'android' | 'desktop'>('desktop')
 
   useEffect(() => {
-    if ('Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window) {
-      setIsSupported(true)
-      setPermission(Notification.permission)
-      checkSubscription()
+    const supported = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window
+    setIsSupported(supported)
+    setPermission(Notification.permission)
+    setPlatform(detectPlatform())
+
+    if (supported) {
+      navigator.serviceWorker.ready.then((reg) => {
+        reg.pushManager.getSubscription().then((sub) => {
+          setIsSubscribed(!!sub)
+        }).catch(() => {})
+      }).catch(() => {})
     }
   }, [])
 
-  const checkSubscription = async () => {
-    try {
-      const reg = await navigator.serviceWorker.ready
-      const subscription = await reg.pushManager.getSubscription()
-      setIsSubscribed(!!subscription)
-    } catch {
-      setIsSubscribed(false)
-    }
-  }
-
   const subscribe = useCallback(async () => {
-    if (!isSupported || loading) return
+    if (loading) return
     setLoading(true)
     try {
-      // Request permission
       const result = await Notification.requestPermission()
       setPermission(result)
       if (result !== 'granted') {
@@ -50,26 +58,36 @@ export function usePushNotifications() {
         return
       }
 
-      // Get service worker registration
       const reg = await navigator.serviceWorker.ready
 
-      // Get VAPID public key from backend
-      const { data } = await api.get('/api/v1/push/vapid-public-key')
-      if (!data.public_key) {
-        toast.error('VAPID ключи не настроены на сервере')
+      // Fetch VAPID key with timeout
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 5000)
+      const response = await fetch(`${api.defaults.baseURL}/api/v1/push/vapid-public-key`, {
+        signal: controller.signal
+      })
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        toast.error('Сервер не отвечает')
         setLoading(false)
         return
       }
 
-      const applicationServerKey = urlBase64ToUint8Array(data.public_key)
+      const { public_key } = await response.json()
+      if (!public_key) {
+        toast.error('VAPID ключи не настроены')
+        setLoading(false)
+        return
+      }
 
-      // Subscribe to push
+      const applicationServerKey = urlBase64ToUint8Array(public_key)
+
       const subscription = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: applicationServerKey.buffer as ArrayBuffer,
       })
 
-      // Send subscription to backend
       const subJson = subscription.toJSON()
       await api.post('/api/v1/push/subscribe', {
         endpoint: subJson.endpoint,
@@ -80,12 +98,17 @@ export function usePushNotifications() {
       setIsSubscribed(true)
       toast.success('Push-уведомления включены!')
     } catch (err: any) {
-      console.error('Push subscribe failed:', err)
-      toast.error('Ошибка подписки: ' + (err.message || 'Попробуйте позже'))
+      if (err.name === 'AbortError') {
+        toast.error('Сервер не отвечает. Попробуйте позже')
+      } else if (err.message?.includes('VAPID')) {
+        toast.error('VAPID ключи настроены неверно')
+      } else {
+        toast.error('Ошибка: ' + (err.message || 'Попробуйте позже'))
+      }
     } finally {
       setLoading(false)
     }
-  }, [isSupported, loading])
+  }, [loading])
 
   const unsubscribe = useCallback(async () => {
     if (loading) return
@@ -100,12 +123,11 @@ export function usePushNotifications() {
       setIsSubscribed(false)
       toast.success('Push-уведомления выключены')
     } catch (err) {
-      console.error('Push unsubscribe failed:', err)
       toast.error('Ошибка отписки')
     } finally {
       setLoading(false)
     }
   }, [loading])
 
-  return { isSupported, isSubscribed, permission, loading, subscribe, unsubscribe }
+  return { isSupported, isSubscribed, permission, loading, platform, subscribe, unsubscribe }
 }
