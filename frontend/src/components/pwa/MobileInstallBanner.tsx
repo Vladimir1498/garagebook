@@ -1,26 +1,37 @@
 import { useState, useEffect } from 'react'
-import { Download, X, Smartphone, Share } from 'lucide-react'
+import { Download, X, Smartphone, Share, Check } from 'lucide-react'
 import { usePwaInstall } from '../../hooks/usePwaInstall'
 import Button from '../ui/Button'
 
 export default function MobileInstallBanner() {
-  const { canInstall, isMobile, platform, hasNativePrompt, promptInstall, dismiss } = usePwaInstall()
+  const { canInstall, isMobile, platform, hasNativePrompt, promptInstall, dismiss, isInstalled } = usePwaInstall()
   const [show, setShow] = useState(false)
   const [dismissed, setDismissed] = useState(false)
+  const [installing, setInstalling] = useState(false)
 
   useEffect(() => {
-    // Show on any mobile device after 3 seconds
-    if (isMobile && !dismissed) {
+    if (isMobile && !dismissed && !isInstalled) {
       const timer = setTimeout(() => setShow(true), 3000)
       return () => clearTimeout(timer)
     }
-  }, [isMobile, dismissed])
+  }, [isMobile, dismissed, isInstalled])
 
-  if (!show || dismissed) return null
+  if (!show || dismissed || isInstalled) return null
 
   const handleDismiss = () => {
     setDismissed(true)
     dismiss()
+  }
+
+  const handleInstall = async () => {
+    if (hasNativePrompt) {
+      setInstalling(true)
+      await promptInstall()
+      setInstalling(false)
+    } else {
+      // On iOS - show instructions
+      alert('Нажмите кнопку "Поделиться" внизу экрана, затем "На экран Домой"')
+    }
   }
 
   const isIOS = platform === 'ios'
@@ -42,7 +53,7 @@ export default function MobileInstallBanner() {
               </p>
             ) : (
               <p className="mt-0.5 text-xs text-surface-500">
-                Добавьте на главный экран для быстрого доступа
+                Установите для быстрого доступа и работы офлайн
               </p>
             )}
           </div>
@@ -51,16 +62,15 @@ export default function MobileInstallBanner() {
           </button>
         </div>
         <div className="mt-3 flex gap-2">
-          {hasNativePrompt ? (
-            <Button size="sm" onClick={promptInstall} className="flex-1">
-              <Download className="h-4 w-4" />
-              Установить
-            </Button>
-          ) : (
-            <Button size="sm" variant="secondary" onClick={handleDismiss} className="flex-1">
-              {isIOS ? 'Понятно' : 'Установить'}
-            </Button>
-          )}
+          <Button size="sm" onClick={handleInstall} loading={installing} className="flex-1">
+            {hasNativePrompt ? (
+              <><Download className="h-4 w-4" /> Установить</>
+            ) : isIOS ? (
+              <><Share className="h-4 w-4" /> Как установить</>
+            ) : (
+              <><Download className="h-4 w-4" /> Установить</>
+            )}
+          </Button>
           <Button size="sm" variant="ghost" onClick={handleDismiss}>
             Позже
           </Button>

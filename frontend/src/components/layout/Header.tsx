@@ -14,16 +14,16 @@ export default function Header() {
   const { open } = useContext(CommandPaletteContext)
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-surface-200 bg-white/80 px-4 backdrop-blur-xl dark:border-surface-700 dark:bg-surface-900/80 md:px-8">
-      <div className="flex items-center gap-3">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-500 text-sm font-bold text-white lg:hidden">G</div>
+    <header className="flex h-14 items-center justify-between border-b border-surface-200 bg-white/80 px-3 backdrop-blur-xl dark:border-surface-700 dark:bg-surface-900/80 md:h-16 md:px-8">
+      <div className="flex items-center gap-2">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-500 text-sm font-bold text-white">G</div>
         <span className="text-lg font-bold lg:hidden">GarageBook</span>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 md:gap-2">
         <button
           onClick={open}
-          className="flex items-center gap-2 rounded-xl border border-surface-200 bg-surface-50 px-3 py-2 text-sm text-surface-400 transition-colors hover:bg-surface-100 dark:border-surface-600 dark:bg-surface-800 dark:hover:bg-surface-700"
+          className="flex items-center gap-2 rounded-xl border border-surface-200 bg-surface-50 px-2 py-2 text-sm text-surface-400 transition-colors hover:bg-surface-100 dark:border-surface-600 dark:bg-surface-800 dark:hover:bg-surface-700 md:px-3"
         >
           <Search className="h-4 w-4" />
           <span className="hidden md:inline">{t('common.search')}...</span>
@@ -32,7 +32,7 @@ export default function Header() {
 
         <button
           onClick={() => setTheme(isDark ? 'light' : 'dark')}
-          className="rounded-xl p-2.5 text-surface-500 transition-colors hover:bg-surface-100 dark:hover:bg-surface-700"
+          className="rounded-xl p-2 text-surface-500 transition-colors hover:bg-surface-100 dark:hover:bg-surface-700 md:p-2.5"
         >
           {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
         </button>
