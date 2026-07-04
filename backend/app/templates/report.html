@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page { size: A4; margin: 20mm; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #1a1d23; font-size: 12px; line-height: 1.5; }
+
+  .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #3B82F6; padding-bottom: 16px; margin-bottom: 24px; }
+  .logo { font-size: 24px; font-weight: 700; color: #3B82F6; }
+  .logo span { color: #1a1d23; }
+  .date { color: #6B7280; font-size: 11px; }
+
+  .section { margin-bottom: 24px; }
+  .section-title { font-size: 14px; font-weight: 700; color: #3B82F6; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #E5E7EB; padding-bottom: 6px; margin-bottom: 12px; }
+
+  .car-header { display: flex; gap: 24px; align-items: center; margin-bottom: 24px; padding: 16px; background: #F8FAFC; border-radius: 12px; border: 1px solid #E5E7EB; }
+  .car-photo { width: 120px; height: 90px; object-fit: cover; border-radius: 8px; }
+  .car-info h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .car-info p { color: #6B7280; font-size: 13px; }
+
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+  .info-item { padding: 8px 12px; background: #F8FAFC; border-radius: 8px; border: 1px solid #E5E7EB; }
+  .info-item .label { font-size: 10px; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.5px; }
+  .info-item .value { font-size: 13px; font-weight: 600; color: #1a1d23; margin-top: 2px; }
+
+  table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+  th { background: #F1F3F5; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #6B7280; padding: 8px 12px; text-align: left; border-bottom: 2px solid #E5E7EB; }
+  td { padding: 8px 12px; border-bottom: 1px solid #F1F3F5; font-size: 12px; }
+  tr:last-child td { border-bottom: none; }
+  .text-right { text-align: right; }
+
+  .summary { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+  .summary-card { padding: 16px; background: #F0F9FF; border-radius: 12px; border: 1px solid #BAE6FD; text-align: center; }
+  .summary-card .amount { font-size: 20px; font-weight: 700; color: #0369A1; }
+  .summary-card .label { font-size: 11px; color: #6B7280; margin-top: 4px; }
+
+  .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #E5E7EB; display: flex; justify-content: space-between; align-items: center; }
+  .footer-text { font-size: 10px; color: #9CA3AF; }
+  .qr { width: 60px; height: 60px; }
+
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+  .badge-blue { background: #EFF6FF; color: #2563EB; }
+  .badge-green { background: #ECFDF5; color: #059669; }
+  .badge-amber { background: #FFFBEB; color: #D97706; }
+  .badge-red { background: #FEF2F2; color: #DC2626; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="logo">Garage<span>Book</span></div>
+    <div style="font-size: 11px; color: #6B7280; margin-top: 2px;">Отчёт по автомобилю</div>
+  </div>
+  <div style="text-align: right;">
+    <div class="date">{{ export_date }}</div>
+    <div class="date">{{ user_name }}</div>
+  </div>
+</div>
+
+{% for car in cars %}
+<div class="car-header">
+  {% if car.photo_url %}
+  <img src="{{ car.photo_url }}" class="car-photo" alt="{{ car.brand }} {{ car.model }}">
+  {% else %}
+  <div class="car-photo" style="background: #E5E7EB; display: flex; align-items: center; justify-content: center; font-size: 24px;">🚗</div>
+  {% endif %}
+  <div class="car-info">
+    <h2>{{ car.brand }} {{ car.model }}</h2>
+    <p>{{ car.year }} год · {{ car.mileage|int }} км · {{ car.fuel_type }}</p>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Характеристики</div>
+  <div class="info-grid">
+    <div class="info-item"><div class="label">Марка / Модель</div><div class="value">{{ car.brand }} {{ car.model }}</div></div>
+    <div class="info-item"><div class="label">Год выпуска</div><div class="value">{{ car.year }}</div></div>
+    <div class="info-item"><div class="label">Пробег</div><div class="value">{{ "{:,}".format(car.mileage|int).replace(",", " ") }} км</div></div>
+    <div class="info-item"><div class="label">Топливо</div><div class="value">{{ car.fuel_type }}</div></div>
+    <div class="info-item"><div class="label">Двигатель</div><div class="value">{{ car.engine_volume or "—" }} л</div></div>
+    <div class="info-item"><div class="label">Коробка</div><div class="value">{{ car.transmission }}</div></div>
+    {% if car.vin %}<div class="info-item"><div class="label">VIN</div><div class="value">{{ car.vin }}</div></div>{% endif %}
+    {% if car.license_plate %}<div class="info-item"><div class="label">Госномер</div><div class="value">{{ car.license_plate }}</div></div>{% endif %}
+    {% if car.color %}<div class="info-item"><div class="label">Цвет</div><div class="value">{{ car.color }}</div></div>{% endif %}
+  </div>
+</div>
+
+{% set car_maintenance = maintenance | selectattr("car_id", "equalto", car.id) | list %}
+{% if car_maintenance %}
+<div class="section">
+  <div class="section-title">История обслуживания ({{ car_maintenance | length }} записей)</div>
+  <table>
+    <thead>
+      <tr><th>Дата</th><th>Тип работ</th><th>Пробег</th><th>Сервис</th><th class="text-right">Стоимость</th></tr>
+    </thead>
+    <tbody>
+      {% for m in car_maintenance %}
+      <tr>
+        <td>{{ m.date }}</td>
+        <td>{{ service_labels.get(m.service_type, m.service_type) }}{% if m.custom_type %} ({{ m.custom_type }}){% endif %}</td>
+        <td>{{ "{:,}".format(m.mileage).replace(",", " ") }} км</td>
+        <td>{{ m.service_center or "—" }}</td>
+        <td class="text-right">{{ "{:,.0f}".format(m.cost).replace(",", " ") }} ₽</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% set car_expenses = expenses | selectattr("car_id", "equalto", car.id) | list %}
+{% if car_expenses %}
+<div class="section">
+  <div class="section-title">Расходы</div>
+  <table>
+    <thead>
+      <tr><th>Дата</th><th>Категория</th><th>Описание</th><th class="text-right">Сумма</th></tr>
+    </thead>
+    <tbody>
+      {% for e in car_expenses %}
+      <tr>
+        <td>{{ e.date }}</td>
+        <td>{{ category_labels.get(e.category, e.category) }}</td>
+        <td>{{ e.description or "—" }}</td>
+        <td class="text-right">{{ "{:,.0f}".format(e.amount).replace(",", " ") }} ₽</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% set car_total = car_expenses | map(attribute='amount') | sum %}
+{% set car_maint_total = car_maintenance | map(attribute='cost') | sum %}
+{% if car_total > 0 or car_maint_total > 0 %}
+<div class="summary">
+  <div class="summary-card">
+    <div class="amount">{{ "{:,.0f}".format(car_maint_total).replace(",", " ") }} ₽</div>
+    <div class="label">Обслуживание</div>
+  </div>
+  <div class="summary-card">
+    <div class="amount">{{ "{:,.0f}".format(car_total).replace(",", " ") }} ₽</div>
+    <div class="label">Прочие расходы</div>
+  </div>
+  <div class="summary-card">
+    <div class="amount">{{ "{:,.0f}".format(car_total + car_maint_total).replace(",", " ") }} ₽</div>
+    <div class="label">Итого</div>
+  </div>
+</div>
+{% endif %}
+
+{% endfor %}
+
+<div class="footer">
+  <div class="footer-text">
+    Отчёт сформирован автоматически сервисом GarageBook<br>
+    Вся информация актуальна на дату формирования отчёта
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,190 @@
+{
+  "app": { "name": "GarageBook", "tagline": "Digital Garage" },
+  "nav": {
+    "dashboard": "Home",
+    "cars": "Cars",
+    "maintenance": "Maintenance",
+    "expenses": "Expenses",
+    "documents": "Documents",
+    "reminders": "Reminders",
+    "analytics": "Analytics",
+    "fleet": "Fleet",
+    "settings": "Settings",
+    "admin": "Admin",
+    "pricing": "Pricing",
+    "logout": "Logout"
+  },
+  "auth": {
+    "login": "Sign In",
+    "register": "Sign Up",
+    "email": "Email",
+    "password": "Password",
+    "password_confirm": "Confirm Password",
+    "full_name": "Full Name",
+    "forgot_password": "Forgot password?",
+    "no_account": "Don't have an account?",
+    "has_account": "Already have an account?",
+    "login_google": "Continue with Google",
+    "login_apple": "Continue with Apple",
+    "or": "or",
+    "reset_sent": "Password reset email sent",
+    "create_account": "Create Account",
+    "sign_in": "Sign In"
+  },
+  "dashboard": {
+    "title": "Home",
+    "next_service": "Next Service",
+    "insurance_expiring": "Insurance Expiring",
+    "inspection_expiring": "Inspection Expiring",
+    "monthly_expenses": "Monthly Expenses",
+    "last_record": "Last Record",
+    "car_count": "Cars",
+    "quick_actions": "Quick Actions",
+    "add_maintenance": "Add Maintenance",
+    "add_expense": "Add Expense",
+    "add_document": "Add Document",
+    "recent_activity": "Recent Activity",
+    "upcoming_events": "Upcoming Events"
+  },
+  "cars": {
+    "title": "Cars",
+    "add": "Add Car",
+    "edit": "Edit Car",
+    "brand": "Brand",
+    "model": "Model",
+    "year": "Year",
+    "vin": "VIN",
+    "license_plate": "License Plate",
+    "fuel_type": "Fuel Type",
+    "engine_volume": "Engine Volume",
+    "transmission": "Transmission",
+    "color": "Color",
+    "mileage": "Mileage",
+    "purchase_date": "Purchase Date",
+    "photo": "Photo",
+    "insurance_expiry": "Insurance Until",
+    "inspection_expiry": "Inspection Until",
+    "empty": "No cars",
+    "empty_desc": "Add your first car"
+  },
+  "maintenance": {
+    "title": "Maintenance",
+    "add": "Add Record",
+    "type": "Service Type",
+    "date": "Date",
+    "cost": "Cost",
+    "description": "Description",
+    "service_center": "Service Center",
+    "suggest_reminder": "Add reminder?",
+    "types": {
+      "oil_change": "Oil Change",
+      "filter": "Filter Replacement",
+      "spark_plugs": "Spark Plugs",
+      "brakes": "Brakes",
+      "suspension": "Suspension",
+      "timing_belt": "Timing Belt",
+      "engine_repair": "Engine Repair",
+      "custom": "Other"
+    }
+  },
+  "expenses": {
+    "title": "Expenses",
+    "add": "Add Expense",
+    "amount": "Amount",
+    "date": "Date",
+    "category": "Category",
+    "description": "Description",
+    "categories": {
+      "fuel": "Fuel",
+      "maintenance": "Service",
+      "repair": "Repair",
+      "insurance": "Insurance",
+      "tax": "Tax",
+      "parking": "Parking",
+      "fine": "Fine",
+      "wash": "Car Wash",
+      "tires": "Tires",
+      "other": "Other"
+    }
+  },
+  "documents": {
+    "title": "Documents",
+    "add": "Add Document",
+    "upload": "Upload File",
+    "drag_drop": "Drop files here",
+    "categories": {
+      "insurance": "Insurance",
+      "sts": "Registration",
+      "diagnostics": "Diagnostics",
+      "work_order": "Work Order",
+      "receipt": "Receipt",
+      "other": "Other"
+    }
+  },
+  "reminders": {
+    "title": "Reminders",
+    "add": "Add Reminder",
+    "via_mileage": "in {{km}} km",
+    "via_date": "{{date}}",
+    "push": "Push Notifications",
+    "email": "Email Notifications"
+  },
+  "analytics": {
+    "title": "Analytics",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "avg_service": "Avg Service Cost",
+    "expensive_repair": "Most Expensive Repair",
+    "total_expenses": "Total Expenses",
+    "cost_per_km": "Cost per KM",
+    "ownership_cost": "Ownership Cost"
+  },
+  "settings": {
+    "title": "Settings",
+    "theme": "Theme",
+    "language": "Language",
+    "notifications": "Notifications",
+    "export": "Export Data",
+    "delete_account": "Delete Account",
+    "timezone": "Timezone"
+  },
+  "fleet": {
+    "title": "Fleet",
+    "create": "Create Organization",
+    "invite": "Invite Member",
+    "members": "Members",
+    "roles": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "viewer": "Viewer"
+    }
+  },
+  "pricing": {
+    "title": "Pricing",
+    "free": "Free",
+    "pro": "Pro",
+    "fleet": "Fleet",
+    "month": "/mo",
+    "choose": "Choose",
+    "current": "Current Plan"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "no_data": "No data",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "back": "Back",
+    "next": "Next",
+    "close": "Close",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No"
+  }
+}

@@ -1,0 +1,190 @@
+{
+  "app": { "name": "GarageBook", "tagline": "Цифровой гараж" },
+  "nav": {
+    "dashboard": "Главная",
+    "cars": "Автомобили",
+    "maintenance": "Обслуживание",
+    "expenses": "Расходы",
+    "documents": "Документы",
+    "reminders": "Напоминания",
+    "analytics": "Аналитика",
+    "fleet": "Автопарк",
+    "settings": "Настройки",
+    "admin": "Админ",
+    "pricing": "Тарифы",
+    "logout": "Выйти"
+  },
+  "auth": {
+    "login": "Вход",
+    "register": "Регистрация",
+    "email": "Email",
+    "password": "Пароль",
+    "password_confirm": "Подтвердите пароль",
+    "full_name": "Имя",
+    "forgot_password": "Забыли пароль?",
+    "no_account": "Нет аккаунта?",
+    "has_account": "Уже есть аккаунт?",
+    "login_google": "Войти через Google",
+    "login_apple": "Войти через Apple",
+    "or": "или",
+    "reset_sent": "Письмо для сброса пароля отправлено",
+    "create_account": "Создать аккаунт",
+    "sign_in": "Войти"
+  },
+  "dashboard": {
+    "title": "Главная",
+    "next_service": "Следующее ТО",
+    "insurance_expiring": "Заканчивается страховка",
+    "inspection_expiring": "Истекает техосмотр",
+    "monthly_expenses": "Расходы за месяц",
+    "last_record": "Последняя запись",
+    "car_count": "Автомобилей",
+    "quick_actions": "Быстрые действия",
+    "add_maintenance": "Добавить обслуживание",
+    "add_expense": "Добавить расход",
+    "add_document": "Добавить документ",
+    "recent_activity": "Последние события",
+    "upcoming_events": "Ближайшие события"
+  },
+  "cars": {
+    "title": "Автомобили",
+    "add": "Добавить автомобиль",
+    "edit": "Редактировать",
+    "brand": "Марка",
+    "model": "Модель",
+    "year": "Год",
+    "vin": "VIN",
+    "license_plate": "Госномер",
+    "fuel_type": "Тип топлива",
+    "engine_volume": "Объем двигателя",
+    "transmission": "Коробка передач",
+    "color": "Цвет",
+    "mileage": "Пробег",
+    "purchase_date": "Дата покупки",
+    "photo": "Фото",
+    "insurance_expiry": "Страховка до",
+    "inspection_expiry": "Техосмотр до",
+    "empty": "Нет автомобилей",
+    "empty_desc": "Добавьте свой первый автомобиль"
+  },
+  "maintenance": {
+    "title": "Обслуживание",
+    "add": "Добавить запись",
+    "type": "Тип работ",
+    "date": "Дата",
+    "cost": "Стоимость",
+    "description": "Описание",
+    "service_center": "Сервисный центр",
+    "suggest_reminder": "Добавить напоминание?",
+    "types": {
+      "oil_change": "Замена масла",
+      "filter": "Замена фильтра",
+      "spark_plugs": "Свечи",
+      "brakes": "Тормоза",
+      "suspension": "Подвеска",
+      "timing_belt": "ГРМ",
+      "engine_repair": "Ремонт двигателя",
+      "custom": "Другое"
+    }
+  },
+  "expenses": {
+    "title": "Расходы",
+    "add": "Добавить расход",
+    "amount": "Сумма",
+    "date": "Дата",
+    "category": "Категория",
+    "description": "Описание",
+    "categories": {
+      "fuel": "Топливо",
+      "maintenance": "ТО",
+      "repair": "Ремонт",
+      "insurance": "Страховка",
+      "tax": "Налог",
+      "parking": "Парковка",
+      "fine": "Штраф",
+      "wash": "Мойка",
+      "tires": "Шины",
+      "other": "Прочее"
+    }
+  },
+  "documents": {
+    "title": "Документы",
+    "add": "Добавить документ",
+    "upload": "Загрузить файл",
+    "drag_drop": "Перетащите файлы сюда",
+    "categories": {
+      "insurance": "Страховка",
+      "sts": "СТС",
+      "diagnostics": "Диагностика",
+      "work_order": "Заказ-наряд",
+      "receipt": "Чек",
+      "other": "Прочее"
+    }
+  },
+  "reminders": {
+    "title": "Напоминания",
+    "add": "Добавить напоминание",
+    "via_mileage": "через {{km}} км",
+    "via_date": "{{date}}",
+    "push": "Push-уведомления",
+    "email": "Email-уведомления"
+  },
+  "analytics": {
+    "title": "Аналитика",
+    "monthly": "За месяц",
+    "yearly": "За год",
+    "avg_service": "Средняя стоимость ТО",
+    "expensive_repair": "Самая дорогая поломка",
+    "total_expenses": "Общие расходы",
+    "cost_per_km": "Стоимость км",
+    "ownership_cost": "Стоимость владения"
+  },
+  "settings": {
+    "title": "Настройки",
+    "theme": "Тема",
+    "language": "Язык",
+    "notifications": "Уведомления",
+    "export": "Экспорт данных",
+    "delete_account": "Удалить аккаунт",
+    "timezone": "Часовой пояс"
+  },
+  "fleet": {
+    "title": "Автопарк",
+    "create": "Создать организацию",
+    "invite": "Пригласить участника",
+    "members": "Участники",
+    "roles": {
+      "owner": "Владелец",
+      "admin": "Администратор",
+      "viewer": "Наблюдатель"
+    }
+  },
+  "pricing": {
+    "title": "Тарифы",
+    "free": "Бесплатный",
+    "pro": "Про",
+    "fleet": "Флит",
+    "month": "/мес",
+    "choose": "Выбрать",
+    "current": "Текущий план"
+  },
+  "common": {
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "delete": "Удалить",
+    "edit": "Редактировать",
+    "loading": "Загрузка...",
+    "error": "Ошибка",
+    "success": "Успешно",
+    "no_data": "Нет данных",
+    "search": "Поиск",
+    "filter": "Фильтр",
+    "sort": "Сортировка",
+    "back": "Назад",
+    "next": "Далее",
+    "close": "Закрыть",
+    "confirm": "Подтвердить",
+    "yes": "Да",
+    "no": "Нет"
+  }
+}
