@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Plus, Users } from 'lucide-react'
-import { useFleets } from '../../hooks/useFleet'
+import { Plus, Users, Lock } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import { fleetService } from '../../services/fleet.service'
 import PageWrapper from '../../components/layout/PageWrapper'
 import FleetCard from '../../components/fleet/FleetCard'
@@ -18,11 +18,15 @@ export default function FleetListPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const qc = useQueryClient()
-  const { data, isLoading } = useFleets()
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['fleets'],
+    queryFn: () => fleetService.list(),
+  })
   const [showCreate, setShowCreate] = useState(false)
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(false)
 
+  const isLocked = (error as any)?.response?.status === 403
   const fleets = data?.data || []
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -34,8 +38,31 @@ export default function FleetListPage() {
       qc.invalidateQueries({ queryKey: ['fleets'] })
       setShowCreate(false)
       setName('')
-    } catch (err: any) { toast.error(err.response?.data?.detail || 'Ошибка') }
-    finally { setLoading(false) }
+    } catch (err: any) {
+      if (err.response?.status === 403) {
+        toast.error('Автопарк доступен на тарифе Fleet')
+        navigate('/pricing')
+      } else {
+        toast.error(err.response?.data?.detail || 'Ошибка')
+      }
+    } finally { setLoading(false) }
+  }
+
+  if (isLocked) {
+    return (
+      <PageWrapper title={t('fleet.title')}>
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="mb-4 rounded-2xl bg-primary-50 p-4 dark:bg-primary-900/20">
+            <Lock className="h-12 w-12 text-primary-500" />
+          </div>
+          <h2 className="text-xl font-bold text-surface-900 dark:text-white">Автопарк доступен на тарифе Fleet</h2>
+          <p className="mt-2 max-w-md text-sm text-surface-500">
+            Управляйте несколькими автомобилями и приглашайте участников
+          </p>
+          <Button className="mt-6" onClick={() => navigate('/pricing')}>Смотреть тарифы</Button>
+        </div>
+      </PageWrapper>
+    )
   }
 
   return (

@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useFleet, useFleetMembers, useFleetCars } from '../../hooks/useFleet'
+import { useFleet, useFleetMembers } from '../../hooks/useFleet'
 import { fleetService } from '../../services/fleet.service'
 import PageWrapper from '../../components/layout/PageWrapper'
 import MemberList from '../../components/fleet/MemberList'
@@ -9,22 +9,31 @@ import InviteModal from '../../components/fleet/InviteModal'
 import Button from '../../components/ui/Button'
 import Skeleton from '../../components/ui/Skeleton'
 import toast from 'react-hot-toast'
+import { Lock } from 'lucide-react'
 
 export default function FleetDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { t } = useTranslation()
-  const { data: fleetData, isLoading: fleetLoading } = useFleet(id!)
+  const navigate = useNavigate()
+  const { data: fleetData, isLoading: fleetLoading, error: fleetError } = useFleet(id!)
   const { data: membersData, isLoading: membersLoading } = useFleetMembers(id!)
   const [showInvite, setShowInvite] = useState(false)
 
   const fleet = fleetData?.data
   const members = membersData?.data || []
+  const isLocked = (fleetError as any)?.response?.status === 403
 
   const handleInvite = async (email: string, role: string) => {
     try {
       await fleetService.invite(id!, email, role)
       toast.success('Приглашение отправлено')
-    } catch (err: any) { toast.error(err.response?.data?.detail || 'Ошибка') }
+    } catch (err: any) {
+      if (err.response?.status === 403) {
+        toast.error('Функция доступна на тарифе Fleet')
+      } else {
+        toast.error(err.response?.data?.detail || 'Ошибка')
+      }
+    }
   }
 
   const handleRemoveMember = async (memberId: string) => {
@@ -35,6 +44,19 @@ export default function FleetDetailPage() {
   }
 
   if (fleetLoading) return <Skeleton className="h-64" />
+
+  if (isLocked) {
+    return (
+      <PageWrapper title="Автопарк" backTo="/fleet">
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <Lock className="mb-4 h-12 w-12 text-primary-500" />
+          <h2 className="text-xl font-bold">Доступно на тарифе Fleet</h2>
+          <p className="mt-2 text-sm text-surface-500">Обновите тариф для управления автопарком</p>
+          <Button className="mt-6" onClick={() => navigate('/pricing')}>Смотреть тарифы</Button>
+        </div>
+      </PageWrapper>
+    )
+  }
 
   return (
     <PageWrapper title={fleet?.name || 'Организация'} backTo="/fleet">
