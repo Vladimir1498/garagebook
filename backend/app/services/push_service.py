@@ -6,7 +6,6 @@ from pywebpush import webpush, WebPushException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.push_subscription import PushSubscription
-from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -21,42 +20,16 @@ def get_vapid_keys() -> dict:
     if private_key and public_key:
         return {"private": private_key, "public": public_key}
 
-    # Fallback: generate and store in filesystem (for local dev)
-    key_dir = settings.UPLOAD_DIR
-    os.makedirs(key_dir, exist_ok=True)
-    private_path = os.path.join(key_dir, ".vapid_private_key")
-    public_path = os.path.join(key_dir, ".vapid_public_key")
-
-    if os.path.exists(private_path) and os.path.exists(public_path):
-        with open(private_path, "r") as f:
-            private_key = f.read().strip()
-        with open(public_path, "r") as f:
-            public_key = f.read().strip()
-        return {"private": private_key, "public": public_key}
-
-    # Generate new key pair
-    from cryptography.hazmat.primitives.asymmetric import ec
-    from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat, PrivateFormat, NoEncryption
-    from cryptography.hazmat.backends import default_backend
-
-    private_key_obj = ec.generate_private_key(ec.SECP256R1(), default_backend())
-    public_key_obj = private_key_obj.public_key()
-
-    private_pem = private_key_obj.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption()).decode("ascii")
-    public_bytes = public_key_obj.public_bytes(Encoding.X962, PublicFormat.UncompressedPoint)
-    public_key_b64 = base64.urlsafe_b64encode(public_bytes).rstrip(b"=").decode("ascii")
-
-    with open(private_path, "w") as f:
-        f.write(private_pem)
-    with open(public_path, "w") as f:
-        f.write(public_key_b64)
-
-    return {"private": private_pem, "public": public_key_b64}
+    # No keys configured
+    logger.warning("VAPID keys not configured in environment variables")
+    return {"private": "", "public": ""}
 
 
 def _get_vapid_private_key():
     """Get the raw PEM private key for pywebpush."""
     keys = get_vapid_keys()
+    if not keys["private"]:
+        raise ValueError("VAPID_PRIVATE_KEY not configured")
     from cryptography.hazmat.primitives.serialization import load_pem_private_key
     from cryptography.hazmat.backends import default_backend
     pem = keys["private"].encode() if isinstance(keys["private"], str) else keys["private"]

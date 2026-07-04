@@ -51,4 +51,6 @@ async def unsubscribe(
 @router.get("/vapid-public-key")
 async def get_vapid_public_key():
     keys = get_vapid_keys()
+    if not keys["public"]:
+        return {"public_key": "", "error": "VAPID ключи не настроены. Добавьте VAPID_PUBLIC_KEY и VAPID_PRIVATE_KEY в переменные окружения."}
     return {"public_key": keys["public"]}

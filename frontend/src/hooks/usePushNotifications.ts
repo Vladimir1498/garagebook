@@ -92,6 +92,11 @@ export function usePushNotifications() {
         if (!resp.ok) throw new Error('Bad response')
         const data = await resp.json()
         publicKey = data.public_key
+        if (data.error) {
+          toast.error(data.error)
+          setLoading(false)
+          return
+        }
       } catch {
         if (mountedRef.current) {
           toast.error('Сервер не отвечает. Попробуйте позже')
