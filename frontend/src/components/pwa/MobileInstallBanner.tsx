@@ -9,11 +9,12 @@ export default function MobileInstallBanner() {
   const [dismissed, setDismissed] = useState(false)
 
   useEffect(() => {
-    if (canInstall && isMobile && !dismissed) {
+    // Show on any mobile device after 3 seconds
+    if (isMobile && !dismissed) {
       const timer = setTimeout(() => setShow(true), 3000)
       return () => clearTimeout(timer)
     }
-  }, [canInstall, isMobile, dismissed])
+  }, [isMobile, dismissed])
 
   if (!show || dismissed) return null
 

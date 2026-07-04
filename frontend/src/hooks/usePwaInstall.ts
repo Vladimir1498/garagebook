@@ -5,15 +5,6 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
-function isIOSSafari(): boolean {
-  const ua = navigator.userAgent
-  return /iPhone|iPad|iPod/.test(ua) && /WebKit/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua)
-}
-
-function isAndroid(): boolean {
-  return /Android/.test(navigator.userAgent)
-}
-
 export function usePwaInstall() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [canInstall, setCanInstall] = useState(false)
@@ -22,16 +13,29 @@ export function usePwaInstall() {
   const [platform, setPlatform] = useState<'ios' | 'android' | 'desktop'>('desktop')
 
   useEffect(() => {
+    // Detect mobile
     const ua = navigator.userAgent.toLowerCase()
     const mobile = /android|iphone|ipad|ipod|mobile|windows phone/i.test(ua)
     setIsMobile(mobile)
 
-    if (isIOSSafari()) setPlatform('ios')
-    else if (isAndroid()) setPlatform('android')
+    // Detect platform
+    if (/iphone|ipad|ipod/i.test(ua)) setPlatform('ios')
+    else if (/android/i.test(ua)) setPlatform('android')
     else setPlatform('desktop')
 
+    // Check if already installed
     if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) {
       setIsInstalled(true)
+      return
+    }
+
+    // Check if dismissed today
+    const dismissedDate = localStorage.getItem('pwa_install_dismissed_date')
+    if (dismissedDate) {
+      const today = new Date().toDateString()
+      if (dismissedDate === today) {
+        return // Don't show again today
+      }
     }
 
     // Android/Chrome: wait for beforeinstallprompt
@@ -42,20 +46,18 @@ export function usePwaInstall() {
     }
     window.addEventListener('beforeinstallprompt', handler)
 
-    // iOS: can't auto-prompt, but show manual instructions after delay
-    if (isIOSSafari() && !window.matchMedia('(display-mode: standalone)').matches) {
-      const timer = setTimeout(() => setCanInstall(true), 8000)
-      window.addEventListener('appinstalled', () => { setIsInstalled(true); setCanInstall(false) })
-      return () => {
-        clearTimeout(timer)
-        window.removeEventListener('beforeinstallprompt', handler)
+    // Show install prompt after delay for mobile
+    const timer = setTimeout(() => {
+      if (!window.matchMedia('(display-mode: standalone').matches) {
+        setCanInstall(true)
       }
-    }
+    }, 5000)
 
     const installed = () => { setIsInstalled(true); setCanInstall(false) }
     window.addEventListener('appinstalled', installed)
 
     return () => {
+      clearTimeout(timer)
       window.removeEventListener('beforeinstallprompt', handler)
       window.removeEventListener('appinstalled', installed)
     }
@@ -73,14 +75,12 @@ export function usePwaInstall() {
   }
 
   const dismiss = () => {
-    localStorage.setItem('pwa_install_dismissed', 'true')
+    localStorage.setItem('pwa_install_dismissed_date', new Date().toDateString())
     setCanInstall(false)
   }
 
-  const wasDismissed = localStorage.getItem('pwa_install_dismissed') === 'true'
-
   return {
-    canInstall: canInstall && !isInstalled && !wasDismissed,
+    canInstall: canInstall && !isInstalled,
     isInstalled,
     isMobile,
     platform,
