@@ -14,7 +14,14 @@ VAPID_CLAIMS = {"sub": "mailto:admin@garagebook.app"}
 
 
 def get_vapid_keys() -> dict:
-    """Get or generate VAPID key pair. Returns dict with 'private' and 'public' keys."""
+    """Get VAPID keys from environment variables."""
+    private_key = os.environ.get("VAPID_PRIVATE_KEY", "")
+    public_key = os.environ.get("VAPID_PUBLIC_KEY", "")
+
+    if private_key and public_key:
+        return {"private": private_key, "public": public_key}
+
+    # Fallback: generate and store in filesystem (for local dev)
     key_dir = settings.UPLOAD_DIR
     os.makedirs(key_dir, exist_ok=True)
     private_path = os.path.join(key_dir, ".vapid_private_key")
@@ -32,11 +39,11 @@ def get_vapid_keys() -> dict:
     from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat, PrivateFormat, NoEncryption
     from cryptography.hazmat.backends import default_backend
 
-    private_key = ec.generate_private_key(ec.SECP256R1(), default_backend())
-    public_key = private_key.public_key()
+    private_key_obj = ec.generate_private_key(ec.SECP256R1(), default_backend())
+    public_key_obj = private_key_obj.public_key()
 
-    private_pem = private_key.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption()).decode("ascii")
-    public_bytes = public_key.public_bytes(Encoding.X962, PublicFormat.UncompressedPoint)
+    private_pem = private_key_obj.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption()).decode("ascii")
+    public_bytes = public_key_obj.public_bytes(Encoding.X962, PublicFormat.UncompressedPoint)
     public_key_b64 = base64.urlsafe_b64encode(public_bytes).rstrip(b"=").decode("ascii")
 
     with open(private_path, "w") as f:
