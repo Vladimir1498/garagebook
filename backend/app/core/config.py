@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "change-me-to-a-random-secret-key-in-production"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
-    ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:5173"
+    ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:5173,http://localhost:8000,http://localhost,https://*.up.railway.app"
     UPLOAD_DIR: str = "./uploads"
 
     GOOGLE_CLIENT_ID: str = ""
