@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
-import { BarChart3, TrendingUp, DollarSign, Gauge } from 'lucide-react'
+import { BarChart3, TrendingUp, DollarSign, Gauge, Lock } from 'lucide-react'
 import { analyticsService } from '../../services/analytics.service'
 import { useCars } from '../../hooks/useCars'
 import PageWrapper from '../../components/layout/PageWrapper'
@@ -9,6 +9,8 @@ import Select from '../../components/ui/Select'
 import StatCard from '../../components/dashboard/StatCard'
 import ExpenseChart from '../../components/charts/ExpenseChart'
 import Skeleton from '../../components/ui/Skeleton'
+import Button from '../../components/ui/Button'
+import { useNavigate } from 'react-router-dom'
 
 const categoryLabels: Record<string, string> = {
   fuel: 'Топливо', maintenance: 'ТО', repair: 'Ремонт', insurance: 'Страховка',
@@ -23,15 +25,38 @@ const serviceTypeLabels: Record<string, string> = {
 
 export default function AnalyticsPage() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const { data: carsData } = useCars()
   const cars = carsData?.data?.data || []
   const [selectedCar, setSelectedCar] = useState('')
   const [period, setPeriod] = useState('year')
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['analytics', selectedCar, period],
     queryFn: () => analyticsService.get(selectedCar || undefined, period),
   })
+
+  // Check if 403 (tier restriction)
+  const isLocked = (error as any)?.response?.status === 403
+
+  if (isLocked) {
+    return (
+      <PageWrapper title={t('analytics.title')}>
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="mb-4 rounded-2xl bg-primary-50 p-4 dark:bg-primary-900/20">
+            <Lock className="h-12 w-12 text-primary-500" />
+          </div>
+          <h2 className="text-xl font-bold text-surface-900 dark:text-white">Аналитика доступна на тарифе Pro</h2>
+          <p className="mt-2 max-w-md text-surface-500">
+            Получите подробную статистику расходов, стоимость обслуживания и графики
+          </p>
+          <Button className="mt-6" onClick={() => navigate('/pricing')}>
+            Обновить тариф
+          </Button>
+        </div>
+      </PageWrapper>
+    )
+  }
 
   const d = data?.data
   const carOptions = [{ value: '', label: 'Все автомобили' }, ...cars.map((c) => ({ value: c.id, label: `${c.brand} ${c.model}` }))]

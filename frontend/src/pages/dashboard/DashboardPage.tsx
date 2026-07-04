@@ -8,7 +8,6 @@ import QuickActions from '../../components/dashboard/QuickActions'
 import RecentActivity from '../../components/dashboard/RecentActivity'
 import UpcomingEvents from '../../components/dashboard/UpcomingEvents'
 import Skeleton from '../../components/ui/Skeleton'
-import InstallPrompt from '../../components/pwa/InstallPrompt'
 import UpdateBanner from '../../components/pwa/UpdateBanner'
 import CommandPalette from '../../components/ui/CommandPalette'
 
@@ -60,7 +59,6 @@ export default function DashboardPage() {
 
   return (
     <PageWrapper title={t('dashboard.title')}>
-      <InstallPrompt />
       <UpdateBanner />
       <CommandPalette />
 
