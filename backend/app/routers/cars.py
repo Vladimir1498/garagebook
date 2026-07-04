@@ -1,6 +1,6 @@
 import os
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
@@ -89,6 +89,7 @@ async def delete_car(car_id: UUID, user: User = Depends(get_current_user), db: A
 async def upload_photo(
     car_id: UUID,
     file: UploadFile = File(...),
+    request: Request = None,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -106,6 +107,11 @@ async def upload_photo(
     with open(file_path, "wb") as f:
         f.write(contents)
 
-    photo_url = f"/uploads/cars/{car_id}/photo{ext}"
+    # Generate absolute URL
+    if request:
+        base_url = str(request.base_url).rstrip("/")
+    else:
+        base_url = os.environ.get("BACKEND_URL", "http://localhost:8000")
+    photo_url = f"{base_url}/uploads/cars/{car_id}/photo{ext}"
     await repo.update(car_id, photo_url=photo_url)
     return {"photo_url": photo_url}
