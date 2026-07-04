@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import toast from 'react-hot-toast'
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
@@ -86,7 +88,7 @@ export function usePushNotifications() {
       let publicKey: string
       try {
         const resp = await withTimeout(
-          fetch('/api/v1/push/vapid-public-key'),
+          fetch(`${API_URL}/api/v1/push/vapid-public-key`),
           5000
         )
         if (!resp.ok) throw new Error('Bad response')
@@ -132,11 +134,15 @@ export function usePushNotifications() {
 
       // Step 5: Send to backend
       const subJson = subscription.toJSON()
+      const token = localStorage.getItem('access_token')
       try {
         await withTimeout(
-          fetch('/api/v1/push/subscribe', {
+          fetch(`${API_URL}/api/v1/push/subscribe`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            },
             body: JSON.stringify({
               endpoint: subJson.endpoint,
               p256dh: subJson.keys?.p256dh || '',
