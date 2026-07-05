@@ -97,7 +97,7 @@ export default function CommandPalette() {
               type: 'maintenance',
               title: parts.join(' · '),
               subtitle: `${m.date} — ${m.cost} ₽`,
-              path: `/maintenance/${m.id}`,
+              path: `/maintenance/${m.id}/edit`,
             })
           })
         }
@@ -109,7 +109,7 @@ export default function CommandPalette() {
               type: 'expense',
               title: `${e.category_label || e.category}`,
               subtitle: e.description || `${e.date} — ${e.amount} ₽`,
-              path: `/expenses/${e.id}`,
+              path: `/expenses`,
             })
           })
         }
@@ -121,7 +121,7 @@ export default function CommandPalette() {
               type: 'document',
               title: d.name,
               subtitle: d.notes || '',
-              path: `/documents/${d.id}`,
+              path: `/documents`,
             })
           })
         }

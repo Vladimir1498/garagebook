@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.config import settings
 from app.core.deps import get_current_user
-from app.core.tiers import get_user_subscription
+from app.core.tiers import get_user_subscription, _get_subscription
 from app.models.user import User
 from app.models.car import Car
 from app.models.document import Document
@@ -111,12 +111,20 @@ async def upload_document(
     if not _verify_car_ownership(car_uuid, user.id, db):
         raise HTTPException(status_code=404, detail="Car not found")
 
-    # Check document limit for free tier
-    sub = await get_user_subscription(user, db)
+    # Check document limit for free tier - count ALL documents across ALL user's cars
+    sub = await _get_subscription(user.id, db)
     if sub.tier == SubscriptionTier.free:
-        count_result = await db.execute(select(func.count(Document.id)).where(Document.car_id == car_uuid))
-        if (count_result.scalar() or 0) >= 5:
-            raise HTTPException(status_code=403, detail="На бесплатном тарифе до 5 документов. Обновите тариф.")
+        # Get all user's car IDs
+        cars_result = await db.execute(select(Car.id).where(Car.user_id == user.id))
+        all_car_ids = [r[0] for r in cars_result.all()]
+        if all_car_ids:
+            count_result = await db.execute(select(func.count(Document.id)).where(Document.car_id.in_(all_car_ids)))
+            current_count = count_result.scalar() or 0
+            if current_count >= 5:
+                raise HTTPException(
+                    status_code=403,
+                    detail="На бесплатном тарифе максимальное количество документов — 5. Обновите тариф для неограниченного хранения."
+                )
 
     # Validate file extension
     ext = os.path.splitext(file.filename or "")[1].lower()

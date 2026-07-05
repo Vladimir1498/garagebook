@@ -8,13 +8,17 @@ from app.models.subscription import Subscription, SubscriptionTier
 from app.repositories.subscription_repository import SubscriptionRepository
 
 
-async def get_user_subscription(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)) -> Subscription:
+async def _get_subscription(user_id, db: AsyncSession) -> Subscription:
+    """Internal: get or create subscription for a user."""
     repo = SubscriptionRepository(db)
-    sub = await repo.get_by_user(user.id)
+    sub = await repo.get_by_user(user_id)
     if not sub:
-        # Create free subscription by default
-        sub = await repo.create(user_id=user.id, tier=SubscriptionTier.free, status="active")
+        sub = await repo.create(user_id=user_id, tier=SubscriptionTier.free, status="active")
     return sub
+
+
+async def get_user_subscription(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)) -> Subscription:
+    return await _get_subscription(user.id, db)
 
 
 def require_tier(minimum_tier: SubscriptionTier):
