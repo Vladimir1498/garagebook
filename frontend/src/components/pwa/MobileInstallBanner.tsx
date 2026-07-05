@@ -14,18 +14,21 @@ export default function MobileInstallBanner() {
     if (isInstalled) return
     const key = 'pwa_dismissed'
     if (localStorage.getItem(key)) return
-    const timer = setTimeout(() => setShow(true), 4000)
+    // Show immediately on mobile — don't wait for beforeinstallprompt
+    const timer = setTimeout(() => setShow(true), 2000)
     return () => clearTimeout(timer)
   }, [isInstalled])
 
   if (!show || dismissed || isInstalled) return null
 
   const handleInstall = async () => {
-    setInstalling(true)
-    const ok = await promptInstall()
-    setInstalling(false)
-    if (ok) { setShow(false); return }
-    // Native prompt failed - show manual instructions
+    if (hasNativePrompt) {
+      setInstalling(true)
+      const ok = await promptInstall()
+      setInstalling(false)
+      if (ok) { setShow(false); return }
+    }
+    // No native prompt or it failed — show manual instructions
     setManualMode(true)
   }
 
@@ -62,11 +65,10 @@ export default function MobileInstallBanner() {
                 <p>3. Нажмите «Добавить»</p>
               </div>
             )}
-            {!manualMode && isIOS && (
-              <p className="mt-0.5 text-xs text-surface-500">Safari → Поделиться → На экран Домой</p>
-            )}
-            {!manualMode && isAndroid && (
-              <p className="mt-0.5 text-xs text-surface-500">Chrome → ⋮ → Установить приложение</p>
+            {!manualMode && (
+              <p className="mt-0.5 text-xs text-surface-500">
+                {isIOS ? 'Safari → Поделиться → На экран Домой' : 'Chrome → ⋮ → Установить приложение'}
+              </p>
             )}
           </div>
           <button onClick={handleDismiss} className="rounded-lg p-1 text-surface-400 hover:text-surface-600">

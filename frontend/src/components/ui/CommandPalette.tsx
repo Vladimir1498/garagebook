@@ -89,11 +89,14 @@ export default function CommandPalette() {
 
         if (data.maintenance) {
           data.maintenance.forEach((m: any) => {
+            const parts = [m.service_type_label || m.service_type]
+            if (m.service_center) parts.push(m.service_center)
+            if (m.description) parts.push(m.description)
             results.push({
               id: `maint-${m.id}`,
               type: 'maintenance',
-              title: `${m.service_type_label || m.service_type}`,
-              subtitle: m.description || `${m.date} — ${m.cost} ₽`,
+              title: parts.join(' · '),
+              subtitle: `${m.date} — ${m.cost} ₽`,
               path: `/maintenance/${m.id}`,
             })
           })

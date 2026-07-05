@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.models.user import User
+from app.models.notification import Notification, NotificationType
 from app.repositories.reminder_repository import ReminderRepository
 from app.schemas.reminder import ReminderCreate, ReminderResponse
 
@@ -28,6 +29,18 @@ async def list_reminders(
 async def create_reminder(data: ReminderCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     repo = ReminderRepository(db)
     reminder = await repo.create(**data.model_dump())
+
+    # Create in-app notification
+    notification = Notification(
+        user_id=user.id,
+        title="Новое напоминание",
+        body=data.title,
+        type=NotificationType.reminder,
+        link=f"/reminders",
+    )
+    db.add(notification)
+    await db.commit()
+
     return reminder
 
 

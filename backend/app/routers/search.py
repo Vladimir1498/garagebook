@@ -131,6 +131,7 @@ async def search(
                 "service_type": m.service_type.value,
                 "service_type_label": SERVICE_TYPE_LABELS.get(m.service_type.value, m.service_type.value),
                 "description": m.description,
+                "service_center": m.service_center,
                 "date": str(m.date),
                 "cost": float(m.cost),
                 "type": "maintenance",
@@ -166,13 +167,12 @@ async def search(
             for e in exp_result.scalars().all()
         ]
 
-        # Search documents - по названию, описанию, заметкам
+        # Search documents - по названию, заметкам
         doc_result = await db.execute(
             select(Document).where(
                 Document.car_id.in_(car_ids),
                 or_(
                     Document.name.ilike(query),
-                    Document.description.ilike(query),
                     Document.notes.ilike(query),
                 )
             ).limit(10)

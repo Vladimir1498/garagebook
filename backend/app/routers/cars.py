@@ -107,11 +107,7 @@ async def upload_photo(
     with open(file_path, "wb") as f:
         f.write(contents)
 
-    # Generate absolute URL
-    if request:
-        base_url = str(request.base_url).rstrip("/")
-    else:
-        base_url = os.environ.get("BACKEND_URL", "http://localhost:8000")
-    photo_url = f"{base_url}/uploads/cars/{car_id}/photo{ext}"
+    # Generate relative URL (will be served by /uploads proxy)
+    photo_url = f"/uploads/cars/{car_id}/photo{ext}"
     await repo.update(car_id, photo_url=photo_url)
     return {"photo_url": photo_url}
