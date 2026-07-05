@@ -38,6 +38,7 @@ export default function CommandPalette() {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const filteredNav = navCommands.filter((c) =>
     t(c.label).toLowerCase().includes(query.toLowerCase()) || c.id.includes(query.toLowerCase())
@@ -57,13 +58,18 @@ export default function CommandPalette() {
 
   useEffect(() => { setSelectedIdx(0) }, [query, searchResults])
 
+  // Поиск по данным при вводе текста
   useEffect(() => {
-    if (!query || query.length < 2) {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current)
+    }
+
+    if (!query || query.length < 1) {
       setSearchResults([])
       return
     }
 
-    const timeoutId = setTimeout(async () => {
+    searchTimeoutRef.current = setTimeout(async () => {
       try {
         const response = await api.get(`/api/v1/search?q=${encodeURIComponent(query)}`)
         const data = response.data
@@ -75,7 +81,7 @@ export default function CommandPalette() {
               id: `car-${car.id}`,
               type: 'car',
               title: `${car.brand} ${car.model} (${car.year})`,
-              subtitle: car.license_plate || car.vin || '',
+              subtitle: car.license_plate || car.vin || car.color || '',
               path: `/cars/${car.id}`,
             })
           })
@@ -86,8 +92,8 @@ export default function CommandPalette() {
             results.push({
               id: `maint-${m.id}`,
               type: 'maintenance',
-              title: `${m.service_type} — ${m.description || ''}`,
-              subtitle: `${m.date} • ${m.cost} ₽`,
+              title: `${m.service_type_label || m.service_type}`,
+              subtitle: m.description || `${m.date} — ${m.cost} ₽`,
               path: `/maintenance/${m.id}`,
             })
           })
@@ -98,8 +104,8 @@ export default function CommandPalette() {
             results.push({
               id: `exp-${e.id}`,
               type: 'expense',
-              title: `${e.category} — ${e.description || ''}`,
-              subtitle: `${e.date} • ${e.amount} ₽`,
+              title: `${e.category_label || e.category}`,
+              subtitle: e.description || `${e.date} — ${e.amount} ₽`,
               path: `/expenses/${e.id}`,
             })
           })
@@ -124,21 +130,26 @@ export default function CommandPalette() {
       } finally {
         setIsSearching(false)
       }
-    }, 300)
+    }, 250)
 
     setIsSearching(true)
-    return () => clearTimeout(timeoutId)
+    return () => {
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
+    }
   }, [query])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') { e.preventDefault(); setSelectedIdx((i) => Math.min(i + 1, allResults.length - 1)) }
     if (e.key === 'ArrowUp') { e.preventDefault(); setSelectedIdx((i) => Math.max(i - 1, 0)) }
     if (e.key === 'Enter' && allResults[selectedIdx]) runCommand(allResults[selectedIdx])
+    if (e.key === 'Escape') { close(); setQuery(''); setSearchResults([]) }
   }
 
   useEffect(() => {
     if (isOpen && inputRef.current) {
       inputRef.current.focus()
+      setQuery('')
+      setSearchResults([])
     }
   }, [isOpen])
 
@@ -151,6 +162,16 @@ export default function CommandPalette() {
     expense: DollarSign,
     document: FileText,
   }
+
+  const typeLabels: Record<string, string> = {
+    car: '🚗 Авто',
+    maintenance: '🔧 ТО',
+    expense: '💰 Расход',
+    document: '📄 Документ',
+    nav: '📌 Раздел',
+  }
+
+  const hasQuery = query.length > 0
 
   return (
     <div className="fixed inset-0 z-[60] flex items-start justify-center pt-[20vh]">
@@ -173,31 +194,73 @@ export default function CommandPalette() {
           <kbd className="rounded-md bg-surface-100 px-2 py-0.5 text-xs text-surface-500 dark:bg-surface-700">ESC</kbd>
         </div>
         <div className="max-h-80 overflow-y-auto p-2">
-          {allResults.length > 0 ? (
-            allResults.map((item, idx) => {
-              const Icon = typeIcons[item.type] || Search
-              return (
+          {/* Навигация показывается только когда нет запроса */}
+          {!hasQuery && (
+            <>
+              <p className="px-3 py-1 text-xs font-medium text-surface-400 uppercase tracking-wider">Разделы</p>
+              {filteredNav.map((cmd, idx) => (
                 <button
-                  key={item.id}
-                  onClick={() => runCommand(item)}
+                  key={cmd.id}
+                  onClick={() => runCommand({ id: cmd.id, type: 'nav', title: t(cmd.label), subtitle: '', path: cmd.path })}
                   onMouseEnter={() => setSelectedIdx(idx)}
                   className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${
                     idx === selectedIdx ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20' : 'text-surface-700 hover:bg-surface-50 dark:text-surface-300 dark:hover:bg-surface-700'
                   }`}
                 >
-                  {Icon && <Icon className="h-4 w-4 shrink-0" />}
-                  <div className="flex flex-col items-start min-w-0">
-                    <span className="truncate w-full">{item.title}</span>
-                    {item.subtitle && <span className="text-xs text-surface-400 truncate w-full">{item.subtitle}</span>}
-                  </div>
+                  <cmd.icon className="h-4 w-4 shrink-0" />
+                  <span>{t(cmd.label)}</span>
                 </button>
-              )
-            })
-          ) : query.length >= 2 && !isSearching ? (
-            <p className="py-4 text-center text-sm text-surface-400">Ничего не найдено</p>
-          ) : query.length < 2 ? (
-            <p className="py-4 text-center text-sm text-surface-400">Введите минимум 2 символа для поиска</p>
-          ) : null}
+              ))}
+            </>
+          )}
+
+          {/* Результаты поиска по данным */}
+          {hasQuery && (
+            <>
+              {isSearching && (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-5 w-5 text-surface-400 animate-spin" />
+                  <span className="ml-2 text-sm text-surface-400">Поиск...</span>
+                </div>
+              )}
+
+              {!isSearching && searchResults.length === 0 && query.length >= 1 && (
+                <p className="py-4 text-center text-sm text-surface-400">Ничего не найдено по запросу «{query}»</p>
+              )}
+
+              {!isSearching && searchResults.length > 0 && (
+                <>
+                  <p className="px-3 py-1 text-xs font-medium text-surface-400 uppercase tracking-wider">
+                    Результаты поиска ({searchResults.length})
+                  </p>
+                  {searchResults.map((item, idx) => {
+                    const Icon = typeIcons[item.type] || Search
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => runCommand(item)}
+                        onMouseEnter={() => setSelectedIdx(idx)}
+                        className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${
+                          idx === selectedIdx ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20' : 'text-surface-700 hover:bg-surface-50 dark:text-surface-300 dark:hover:bg-surface-700'
+                        }`}
+                      >
+                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-surface-100 dark:bg-surface-600">
+                          <Icon className="h-3.5 w-3.5 text-surface-500" />
+                        </div>
+                        <div className="flex min-w-0 flex-col">
+                          <span className="truncate font-medium">{item.title}</span>
+                          {item.subtitle && <span className="truncate text-xs text-surface-400">{item.subtitle}</span>}
+                        </div>
+                        <span className="ml-auto shrink-0 text-[10px] text-surface-300 dark:text-surface-600">
+                          {typeLabels[item.type] || ''}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -12,6 +12,44 @@ from app.models.document import Document
 
 router = APIRouter(prefix="/api/v1/search", tags=["search"])
 
+# Маппинг русских названий на enum values
+SERVICE_TYPE_LABELS = {
+    "oil_change": "замена масла",
+    "filter": "фильтр",
+    "spark_plugs": "свечи",
+    "brakes": "тормоза",
+    "suspension": "подвеска",
+    "timing_belt": "грм",
+    "engine_repair": "двигатель",
+    "custom": "другое",
+}
+
+# Обратный маппинг для поиска по русскому названию
+SERVICE_TYPE_KEYWORDS = {
+    "замена масла": "oil_change",
+    "масло": "oil_change",
+    "фильтр": "filter",
+    "свечи": "spark_plugs",
+    "тормоза": "brakes",
+    "подвеска": "suspension",
+    "грм": "timing_belt",
+    "двигатель": "engine_repair",
+    "ремонт двигателя": "engine_repair",
+}
+
+EXPENSE_CATEGORY_LABELS = {
+    "fuel": "топливо",
+    "maintenance": "обслуживание",
+    "repair": "ремонт",
+    "insurance": "страховка",
+    "tax": "налог",
+    "parking": "парковка",
+    "fine": "штраф",
+    "wash": "мойка",
+    "tires": "шины",
+    "other": "прочее",
+}
+
 
 @router.get("")
 async def search(
@@ -21,6 +59,22 @@ async def search(
 ):
     results = {"cars": [], "maintenance": [], "expenses": [], "documents": []}
     query = f"%{q}%"
+    query_lower = q.lower()
+
+    # Определяем все service_type ключи, подходящие под запрос
+    matching_service_types = []
+    for key, label in SERVICE_TYPE_LABELS.items():
+        if query_lower in label.lower() or query_lower in key:
+            matching_service_types.append(key)
+    for keyword, enum_val in SERVICE_TYPE_KEYWORDS.items():
+        if query_lower in keyword.lower() and enum_val not in matching_service_types:
+            matching_service_types.append(enum_val)
+
+    # Определяем все expense категории, подходящие под запрос
+    matching_expense_cats = []
+    for key, label in EXPENSE_CATEGORY_LABELS.items():
+        if query_lower in label.lower() or query_lower in key:
+            matching_expense_cats.append(key)
 
     # Search cars
     car_result = await db.execute(
@@ -49,19 +103,25 @@ async def search(
         for c in car_result.scalars().all()
     ]
 
-    # Search maintenance records
+    # Get user's car IDs for maintenance/expenses/documents
     car_ids_result = await db.execute(select(Car.id).where(Car.user_id == user.id))
     car_ids = [r[0] for r in car_ids_result.all()]
 
     if car_ids:
+        # Search maintenance records - по описанию, типу работ, сервисному центру, custom_type
+        maint_conditions = [
+            MaintenanceRecord.description.ilike(query),
+            MaintenanceRecord.service_center.ilike(query),
+            MaintenanceRecord.custom_type.ilike(query),
+        ]
+        # Добавляем поиск по enum values и русским названиям
+        for st in matching_service_types:
+            maint_conditions.append(MaintenanceRecord.service_type == st)
+
         maint_result = await db.execute(
             select(MaintenanceRecord).where(
                 MaintenanceRecord.car_id.in_(car_ids),
-                or_(
-                    MaintenanceRecord.description.ilike(query),
-                    MaintenanceRecord.service_center.ilike(query),
-                    MaintenanceRecord.custom_type.ilike(query),
-                )
+                or_(*maint_conditions)
             ).limit(10)
         )
         results["maintenance"] = [
@@ -69,6 +129,7 @@ async def search(
                 "id": str(m.id),
                 "car_id": str(m.car_id),
                 "service_type": m.service_type.value,
+                "service_type_label": SERVICE_TYPE_LABELS.get(m.service_type.value, m.service_type.value),
                 "description": m.description,
                 "date": str(m.date),
                 "cost": float(m.cost),
@@ -77,14 +138,18 @@ async def search(
             for m in maint_result.scalars().all()
         ]
 
-        # Search expenses
+        # Search expenses - по описанию, категории
+        exp_conditions = [
+            Expense.description.ilike(query),
+            Expense.category.ilike(query),
+        ]
+        for cat in matching_expense_cats:
+            exp_conditions.append(Expense.category == cat)
+
         exp_result = await db.execute(
             select(Expense).where(
                 Expense.car_id.in_(car_ids),
-                or_(
-                    Expense.description.ilike(query),
-                    Expense.category.ilike(query),
-                )
+                or_(*exp_conditions)
             ).limit(10)
         )
         results["expenses"] = [
@@ -92,6 +157,7 @@ async def search(
                 "id": str(e.id),
                 "car_id": str(e.car_id),
                 "category": e.category.value,
+                "category_label": EXPENSE_CATEGORY_LABELS.get(e.category.value, e.category.value),
                 "description": e.description,
                 "amount": float(e.amount),
                 "date": str(e.date),
@@ -100,7 +166,7 @@ async def search(
             for e in exp_result.scalars().all()
         ]
 
-        # Search documents
+        # Search documents - по названию, описанию, заметкам
         doc_result = await db.execute(
             select(Document).where(
                 Document.car_id.in_(car_ids),
