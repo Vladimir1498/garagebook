@@ -22,13 +22,11 @@ ALLOWED_EXTENSIONS = {".pdf", ".jpg", ".jpeg", ".png", ".webp", ".gif"}
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
 
 
-def _verify_car_ownership(car_id: UUID, user_id: UUID, db) -> bool:
+async def _verify_car_ownership(car_id: UUID, user_id: UUID, db: AsyncSession) -> bool:
     """Check that a car belongs to the given user."""
     from sqlalchemy import select as sa_select
     from app.models.car import Car as CarModel
-    import asyncio
-    # Synchronous check within the async session
-    result = db.execute(sa_select(CarModel.id).where(CarModel.id == car_id, CarModel.user_id == user_id))
+    result = await db.execute(sa_select(CarModel.id).where(CarModel.id == car_id, CarModel.user_id == user_id))
     return result.scalar() is not None
 
 
@@ -57,7 +55,7 @@ async def list_documents(
     skip = (page - 1) * limit
     if car_id:
         # Verify ownership
-        if not _verify_car_ownership(car_id, user.id, db):
+        if not await _verify_car_ownership(car_id, user.id, db):
             raise HTTPException(status_code=404, detail="Car not found")
         documents = await repo.get_car_documents(car_id, skip=skip, limit=limit)
         total_result = await db.execute(select(func.count(Document.id)).where(Document.car_id == car_id))
@@ -87,7 +85,7 @@ async def get_document(doc_id: UUID, user: User = Depends(get_current_user), db:
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
     # Verify ownership via car
-    if not _verify_car_ownership(doc.car_id, user.id, db):
+    if not await _verify_car_ownership(doc.car_id, user.id, db):
         raise HTTPException(status_code=404, detail="Document not found")
     return doc
 
@@ -108,7 +106,7 @@ async def upload_document(
         raise HTTPException(status_code=400, detail="Invalid car_id")
 
     # Verify car ownership
-    if not _verify_car_ownership(car_uuid, user.id, db):
+    if not await _verify_car_ownership(car_uuid, user.id, db):
         raise HTTPException(status_code=404, detail="Car not found")
 
     # Check document limit for free tier - count ALL documents across ALL user's cars
@@ -164,7 +162,7 @@ async def delete_document(doc_id: UUID, user: User = Depends(get_current_user), 
     doc = await repo.get(doc_id)
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
-    if not _verify_car_ownership(doc.car_id, user.id, db):
+    if not await _verify_car_ownership(doc.car_id, user.id, db):
         raise HTTPException(status_code=404, detail="Document not found")
 
     # Delete file from disk
