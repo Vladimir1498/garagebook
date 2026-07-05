@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.core.database import engine
 from app.models import Base
-from app.routers import auth, users, cars, maintenance, expenses, documents, reminders, dashboard, analytics, admin, ai, obd, fleets, payments, public, notifications, push, export
+from app.routers import auth, users, cars, maintenance, expenses, documents, reminders, dashboard, analytics, admin, ai, obd, fleets, payments, public, notifications, push, export, search
 
 logger = logging.getLogger(__name__)
 
@@ -43,31 +43,7 @@ async def validation_error_handler(request: Request, exc: RequestValidationError
     from fastapi.responses import JSONResponse
     return JSONResponse(status_code=422, content={"detail": exc.errors()})
 
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    yield
-
-
-app = FastAPI(
-    title="GarageBook API",
-    description="Digital garage for car owners",
-    version="1.0.0",
-    lifespan=lifespan,
-)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS.split(","),
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-for router in [auth, users, cars, maintenance, expenses, documents, reminders, dashboard, analytics, admin, ai, obd, fleets, payments, public, notifications, push, export]:
+for router in [auth, users, cars, maintenance, expenses, documents, reminders, dashboard, analytics, admin, ai, obd, fleets, payments, public, notifications, push, export, search]:
     app.include_router(router.router)
 
 # Serve uploaded files
