@@ -120,7 +120,7 @@ export default function CommandPalette() {
               id: `doc-${d.id}`,
               type: 'document',
               title: d.name,
-              subtitle: d.description || '',
+              subtitle: d.notes || '',
               path: `/documents/${d.id}`,
             })
           })

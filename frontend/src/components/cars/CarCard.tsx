@@ -1,20 +1,22 @@
 import { useNavigate } from 'react-router-dom'
 import { Fuel, Gauge, Calendar } from 'lucide-react'
 import type { Car } from '../../types/car.types'
+import { resolveFileUrl } from '../../utils/resolveFileUrl'
 
 const fuelLabels: Record<string, string> = { petrol: 'Бензин', diesel: 'Дизель', electric: 'Электро', hybrid: 'Гибрид' }
 
 export default function CarCard({ car }: { car: Car }) {
   const navigate = useNavigate()
+  const resolvedPhotoUrl = resolveFileUrl(car.photo_url)
 
   return (
     <div
       onClick={() => navigate(`/cars/${car.id}`)}
       className="group cursor-pointer rounded-2xl border border-surface-200 bg-white p-5 shadow-card transition-all duration-200 hover:shadow-card-hover hover:-translate-y-0.5 dark:border-surface-700 dark:bg-surface-800"
     >
-      {car.photo_url ? (
+      {resolvedPhotoUrl ? (
         <div className="mb-4 h-40 overflow-hidden rounded-xl">
-          <img src={car.photo_url} alt={`${car.brand} ${car.model}`} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+          <img src={resolvedPhotoUrl} alt={`${car.brand} ${car.model}`} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
         </div>
       ) : (
         <div className="mb-4 flex h-40 items-center justify-center rounded-xl bg-surface-100 dark:bg-surface-700">

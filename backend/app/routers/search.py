@@ -1,6 +1,6 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import select, or_, func
+from sqlalchemy import select, or_, func, String
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import get_current_user
@@ -149,7 +149,7 @@ async def search(
         # Search expenses - по описанию, категории
         exp_conditions = [
             Expense.description.ilike(query),
-            Expense.category.ilike(query),
+            Expense.category.cast(String).ilike(query),
         ]
         for cat in matching_expense_cats:
             exp_conditions.append(Expense.category == cat)
@@ -189,7 +189,7 @@ async def search(
                 "id": str(d.id),
                 "car_id": str(d.car_id),
                 "name": d.name,
-                "description": d.description,
+                "notes": d.notes,
                 "type": "document",
             }
             for d in doc_result.scalars().all()
