@@ -14,7 +14,7 @@ export default function Header() {
   const { open } = useContext(CommandPaletteContext)
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-surface-200 bg-white/80 px-3 backdrop-blur-xl dark:border-surface-700 dark:bg-surface-900/80 md:h-16 md:px-8">
+    <header className="relative z-50 flex h-14 items-center justify-between border-b border-surface-200 bg-white/80 px-3 backdrop-blur-xl dark:border-surface-700 dark:bg-surface-900/80 md:h-16 md:px-8">
       <div className="flex items-center gap-2">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-500 text-sm font-bold text-white">G</div>
         <span className="text-lg font-bold lg:hidden">GarageBook</span>
