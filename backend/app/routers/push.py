@@ -44,7 +44,7 @@ async def unsubscribe(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    await remove_subscription(endpoint=data.endpoint, db=db)
+    await remove_subscription(endpoint=data.endpoint, user_id=user.id, db=db)
     return {"message": "Unsubscribed"}
 
 

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useCreateExpense } from '../../hooks/useExpenses'
@@ -25,18 +25,24 @@ export default function ExpenseFormPage() {
   const cars = carsData?.data?.data || []
   const carOptions = cars.map((c) => ({ value: c.id, label: `${c.brand} ${c.model}` }))
 
+  const [carId, setCarId] = useState('')
   const [category, setCategory] = useState('fuel')
   const [amount, setAmount] = useState('')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [description, setDescription] = useState('')
 
-  const effectiveCarId = cars.length > 0 ? cars[0].id : ''
+  // Auto-select first car when data loads
+  useEffect(() => {
+    if (cars.length > 0 && !carId) {
+      setCarId(cars[0].id)
+    }
+  }, [cars, carId])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!effectiveCarId) { toast.error('Сначала добавьте автомобиль'); return }
+    if (!carId) { toast.error('Сначала добавьте автомобиль'); return }
     try {
-      await createExpense.mutateAsync({ car_id: effectiveCarId, category: category as any, amount: Number(amount), date, description: description || undefined })
+      await createExpense.mutateAsync({ car_id: carId, category: category as any, amount: Number(amount), date, description: description || undefined })
       toast.success('Расход добавлен')
       navigate('/expenses')
     } catch (err: any) { toast.error(err.response?.data?.detail || 'Ошибка') }
@@ -47,7 +53,7 @@ export default function ExpenseFormPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="rounded-2xl border border-surface-200 bg-white p-6 dark:border-surface-700 dark:bg-surface-800">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Select label="Автомобиль *" options={carOptions} value={effectiveCarId} onChange={() => {}} disabled={carOptions.length <= 1} />
+            <Select label="Автомобиль *" options={carOptions} value={carId} onChange={(e) => setCarId(e.target.value)} disabled={carOptions.length <= 1} />
             <Select label="Категория" options={categoryOptions} value={category} onChange={(e) => setCategory(e.target.value)} />
             <Input label="Сумма (₽) *" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} required />
             <Input label="Дата *" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />

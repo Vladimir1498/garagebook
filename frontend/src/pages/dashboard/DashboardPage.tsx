@@ -9,7 +9,6 @@ import RecentActivity from '../../components/dashboard/RecentActivity'
 import UpcomingEvents from '../../components/dashboard/UpcomingEvents'
 import Skeleton from '../../components/ui/Skeleton'
 import UpdateBanner from '../../components/pwa/UpdateBanner'
-import CommandPalette from '../../components/ui/CommandPalette'
 
 const serviceTypeLabels: Record<string, string> = {
   oil_change: 'Замена масла', filter: 'Замена фильтра', spark_plugs: 'Свечи',
@@ -60,7 +59,6 @@ export default function DashboardPage() {
   return (
     <PageWrapper title={t('dashboard.title')}>
       <UpdateBanner />
-      <CommandPalette />
 
       {isLoading ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

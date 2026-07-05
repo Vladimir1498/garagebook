@@ -3,15 +3,13 @@
 const CACHE_NAME = 'garagebook-v1'
 const STATIC_CACHE = 'garagebook-static-v1'
 const API_CACHE = 'garagebook-api-v1'
+const PENDING_CACHE = 'garagebook-pending'
 const OFFLINE_URL = '/offline.html'
 
 // Static assets to pre-cache
 const PRECACHE_URLS = [
   '/',
   '/offline.html',
-  '/manifest.webmanifest',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
 ]
 
 // Install: pre-cache critical assets
@@ -22,11 +20,11 @@ self.addEventListener('install', (event) => {
   self.skipWaiting()
 })
 
-// Activate: clean old caches
+// Activate: clean old caches but preserve PENDING_CACHE
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== STATIC_CACHE && k !== API_CACHE).map((k) => caches.delete(k)))
+      Promise.all(keys.filter((k) => k !== STATIC_CACHE && k !== API_CACHE && k !== PENDING_CACHE).map((k) => caches.delete(k)))
     )
   )
   self.clients.claim()
@@ -45,7 +43,6 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          // Cache successful GET responses (except auth)
           if (response.ok && !url.pathname.includes('/auth/')) {
             const clone = response.clone()
             caches.open(API_CACHE).then((cache) => cache.put(request, clone))
@@ -71,7 +68,6 @@ self.addEventListener('fetch', (event) => {
           return response
         })
         .catch(() => {
-          // For navigation requests, show offline page
           if (request.mode === 'navigate') {
             return caches.match(OFFLINE_URL)
           }
@@ -127,7 +123,7 @@ self.addEventListener('sync', (event) => {
 })
 
 async function syncPendingActions() {
-  const cache = await caches.open('garagebook-pending')
+  const cache = await caches.open(PENDING_CACHE)
   const requests = await cache.keys()
   for (const request of requests) {
     try {
@@ -156,8 +152,7 @@ async function syncPendingActions() {
 // Listen for messages from the app
 self.addEventListener('message', (event) => {
   if (event.data?.type === 'QUEUE_OFFLINE_ACTION') {
-    // Save action to pending cache for later sync
-    caches.open('garagebook-pending').then((cache) => {
+    caches.open(PENDING_CACHE).then((cache) => {
       const request = new Request(event.data.url, {
         method: event.data.method || 'POST',
         body: JSON.stringify(event.data.body),

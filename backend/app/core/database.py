@@ -1,20 +1,17 @@
-import os
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from app.core.config import settings
 
-# Get DATABASE_URL from environment
-database_url = os.environ.get("DATABASE_URL", "")
 
-# Convert postgres:// or postgresql:// to postgresql+asyncpg://
-if database_url.startswith("postgres://"):
-    database_url = database_url.replace("postgres://", "postgresql+asyncpg://", 1)
-elif database_url.startswith("postgresql://"):
-    database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+def _normalize_url(url: str) -> str:
+    """Convert postgres:// or postgresql:// to postgresql+asyncpg:// for async SQLAlchemy."""
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+    elif url.startswith("postgresql://"):
+        url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    return url
 
-# Fallback for local dev
-if not database_url:
-    database_url = "postgresql+asyncpg://garagebook:garagebook_secret@localhost:5432/garagebook"
 
-engine = create_async_engine(database_url, echo=False)
+engine = create_async_engine(_normalize_url(settings.DATABASE_URL), echo=False, pool_pre_ping=True)
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 

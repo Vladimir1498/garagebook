@@ -18,6 +18,9 @@ export default function SettingsPage() {
   const [showDelete, setShowDelete] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [exportingPdf, setExportingPdf] = useState(false)
+  const [emailNotifs, setEmailNotifs] = useState(true)
+  const [maintenanceNotifs, setMaintenanceNotifs] = useState(true)
+  const [insuranceNotifs, setInsuranceNotifs] = useState(true)
 
   const downloadBlob = (data: Blob, filename: string) => {
     const url = window.URL.createObjectURL(data)
@@ -99,13 +102,23 @@ export default function SettingsPage() {
           <h3 className="mb-4 text-base font-semibold text-surface-900 dark:text-white">{t('settings.notifications')}</h3>
           <div className="space-y-3">
             <PushToggle />
-            {['Email-уведомления', 'Напоминания о ТО', 'Напоминания о страховке'].map((label) => (
-              <label key={label} className="flex items-center justify-between">
+            {[
+              { label: 'Email-уведомления', checked: emailNotifs, onChange: setEmailNotifs },
+              { label: 'Напоминания о ТО', checked: maintenanceNotifs, onChange: setMaintenanceNotifs },
+              { label: 'Напоминания о страховке', checked: insuranceNotifs, onChange: setInsuranceNotifs },
+            ].map((item) => (
+              <label key={item.label} className="flex items-center justify-between cursor-pointer">
                 <div className="flex items-center gap-3">
                   <Bell className="h-4 w-4 text-surface-400" />
-                  <span className="text-sm text-surface-700 dark:text-surface-300">{label}</span>
+                  <span className="text-sm text-surface-700 dark:text-surface-300">{item.label}</span>
                 </div>
-                <input type="checkbox" defaultChecked className="h-4 w-4 rounded border-surface-300 text-primary-500" />
+                <button
+                  type="button"
+                  onClick={() => item.onChange(!item.checked)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${item.checked ? 'bg-primary-500' : 'bg-surface-300'}`}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${item.checked ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
               </label>
             ))}
           </div>
@@ -140,9 +153,24 @@ export default function SettingsPage() {
 
       <Modal isOpen={showDelete} onClose={() => setShowDelete(false)} title="Удалить аккаунт?" size="sm">
         <p className="text-sm text-surface-600">Введите ваш email для подтверждения.</p>
+        <input
+          type="email"
+          className="mt-3 w-full rounded-xl border border-surface-200 bg-white px-4 py-2.5 text-sm dark:border-surface-600 dark:bg-surface-800 dark:text-white"
+          placeholder="you@example.com"
+          id="delete-email-confirm"
+        />
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="ghost" onClick={() => setShowDelete(false)}>{t('common.cancel')}</Button>
-          <Button variant="danger">{t('common.confirm')}</Button>
+          <Button variant="danger" onClick={async () => {
+            const input = document.getElementById('delete-email-confirm') as HTMLInputElement
+            if (input?.value) {
+              try {
+                await api.post('/api/v1/users/delete', { email: input.value })
+                toast.success('Аккаунт удалён')
+                window.location.href = '/login'
+              } catch { toast.error('Ошибка удаления') }
+            } else { toast.error('Введите email') }
+          }}>{t('common.confirm')}</Button>
         </div>
       </Modal>
     </PageWrapper>

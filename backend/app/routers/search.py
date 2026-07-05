@@ -12,6 +12,12 @@ from app.models.document import Document
 
 router = APIRouter(prefix="/api/v1/search", tags=["search"])
 
+
+def _escape_like(value: str) -> str:
+    """Escape special characters for SQL LIKE to prevent pattern injection."""
+    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
 # Маппинг русских названий на enum values
 SERVICE_TYPE_LABELS = {
     "oil_change": "замена масла",
@@ -58,7 +64,8 @@ async def search(
     db: AsyncSession = Depends(get_db),
 ):
     results = {"cars": [], "maintenance": [], "expenses": [], "documents": []}
-    query = f"%{q}%"
+    escaped = _escape_like(q)
+    query = f"%{escaped}%"
     query_lower = q.lower()
 
     # Определяем все service_type ключи, подходящие под запрос

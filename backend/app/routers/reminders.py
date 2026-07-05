@@ -1,14 +1,31 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.models.user import User
+from app.models.car import Car
+from app.models.reminder import Reminder
 from app.models.notification import Notification, NotificationType
 from app.repositories.reminder_repository import ReminderRepository
 from app.schemas.reminder import ReminderCreate, ReminderResponse
 
 router = APIRouter(prefix="/api/v1/reminders", tags=["reminders"])
+
+
+async def _verify_car_ownership(car_id: UUID, user_id: UUID, db) -> bool:
+    result = await db.execute(select(Car.id).where(Car.id == car_id, Car.user_id == user_id))
+    return result.scalar() is not None
+
+
+async def _get_reminder_with_ownership(reminder_id: UUID, user_id: UUID, db) -> Reminder | None:
+    """Get a reminder only if it belongs to a car owned by the user."""
+    result = await db.execute(
+        select(Reminder).join(Car, Reminder.car_id == Car.id)
+        .where(Reminder.id == reminder_id, Car.user_id == user_id)
+    )
+    return result.scalar_one_or_none()
 
 
 @router.get("")
@@ -19,14 +36,28 @@ async def list_reminders(
 ):
     repo = ReminderRepository(db)
     if car_id:
+        if not await _verify_car_ownership(car_id, user.id, db):
+            raise HTTPException(status_code=404, detail="Car not found")
         reminders = await repo.get_car_reminders(car_id)
     else:
-        reminders = await repo.get_all()
+        # Get only reminders for user's cars
+        cars_result = await db.execute(select(Car.id).where(Car.user_id == user.id))
+        car_ids = [r[0] for r in cars_result.all()]
+        if not car_ids:
+            reminders = []
+        else:
+            result = await db.execute(select(Reminder).where(Reminder.car_id.in_(car_ids)))
+            reminders = list(result.scalars().all())
     return {"data": [ReminderResponse.model_validate(r) for r in reminders], "meta": {"page": 1, "limit": 100, "total": len(reminders), "total_pages": 1}}
 
 
 @router.post("", response_model=ReminderResponse)
 async def create_reminder(data: ReminderCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    # Verify car ownership
+    result = await db.execute(select(Car.id).where(Car.id == data.car_id, Car.user_id == user.id))
+    if result.scalar() is None:
+        raise HTTPException(status_code=404, detail="Car not found")
+
     repo = ReminderRepository(db)
     reminder = await repo.create(**data.model_dump())
 
@@ -36,7 +67,7 @@ async def create_reminder(data: ReminderCreate, user: User = Depends(get_current
         title="Новое напоминание",
         body=data.title,
         type=NotificationType.reminder,
-        link=f"/reminders",
+        link="/reminders",
     )
     db.add(notification)
     await db.commit()
@@ -47,15 +78,18 @@ async def create_reminder(data: ReminderCreate, user: User = Depends(get_current
 @router.post("/{reminder_id}/complete", response_model=ReminderResponse)
 async def complete_reminder(reminder_id: UUID, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     repo = ReminderRepository(db)
-    reminder = await repo.update(reminder_id, is_completed=True)
+    reminder = await _get_reminder_with_ownership(reminder_id, user.id, db)
     if not reminder:
         raise HTTPException(status_code=404, detail="Reminder not found")
-    return reminder
+    updated = await repo.update(reminder_id, is_completed=True)
+    return updated
 
 
 @router.delete("/{reminder_id}")
 async def delete_reminder(reminder_id: UUID, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     repo = ReminderRepository(db)
-    if not await repo.delete(reminder_id):
+    reminder = await _get_reminder_with_ownership(reminder_id, user.id, db)
+    if not reminder:
         raise HTTPException(status_code=404, detail="Reminder not found")
+    await repo.delete(reminder_id)
     return {"message": "Deleted"}

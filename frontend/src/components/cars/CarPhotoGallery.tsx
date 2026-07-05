@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { Camera, X } from 'lucide-react'
+import { resolveFileUrl } from '../../utils/resolveFileUrl'
 
 interface CarPhotoGalleryProps {
   photoUrl: string | null
@@ -15,10 +16,12 @@ export default function CarPhotoGallery({ photoUrl, onUpload }: CarPhotoGalleryP
     e.target.value = ''
   }
 
-  if (photoUrl) {
+  const resolvedUrl = resolveFileUrl(photoUrl)
+
+  if (resolvedUrl) {
     return (
       <div className="relative overflow-hidden rounded-2xl">
-        <img src={photoUrl} alt="Фото автомобиля" className="h-64 w-full object-cover sm:h-80" />
+        <img src={resolvedUrl} alt="Фото автомобиля" className="h-64 w-full object-cover sm:h-80" />
         <button
           onClick={() => inputRef.current?.click()}
           className="absolute bottom-3 right-3 rounded-xl bg-black/50 p-2 text-white backdrop-blur-sm transition-colors hover:bg-black/70"

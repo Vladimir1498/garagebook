@@ -55,9 +55,9 @@ async def save_subscription(user_id, endpoint: str, p256dh: str, auth: str, user
     return sub
 
 
-async def remove_subscription(endpoint: str, db: AsyncSession):
+async def remove_subscription(endpoint: str, user_id, db: AsyncSession):
     existing = await db.execute(
-        select(PushSubscription).where(PushSubscription.endpoint == endpoint)
+        select(PushSubscription).where(PushSubscription.endpoint == endpoint, PushSubscription.user_id == user_id)
     )
     for sub in existing.scalars().all():
         await db.delete(sub)

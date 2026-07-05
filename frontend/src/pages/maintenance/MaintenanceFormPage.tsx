@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useCreateMaintenance, useMaintenance } from '../../hooks/useMaintenance'
+import { useCreateMaintenance, useUpdateMaintenance, useMaintenance } from '../../hooks/useMaintenance'
 import { useCars } from '../../hooks/useCars'
 import PageWrapper from '../../components/layout/PageWrapper'
 import Input from '../../components/ui/Input'
@@ -28,10 +28,12 @@ export default function MaintenanceFormPage() {
   const { data: carsData } = useCars()
   const { data: existingData, isLoading: loadingExisting } = useMaintenance(id || '')
   const createMaintenance = useCreateMaintenance()
+  const updateMaintenance = useUpdateMaintenance()
 
   const cars = carsData?.data?.data || []
   const carOptions = cars.map((c) => ({ value: c.id, label: `${c.brand} ${c.model}` }))
   const existing = existingData?.data
+  const isEditing = !!id
 
   const [carId, setCarId] = useState('')
   const [serviceType, setServiceType] = useState('oil_change')
@@ -68,18 +70,26 @@ export default function MaintenanceFormPage() {
     e.preventDefault()
     if (!effectiveCarId) { toast.error('Сначала добавьте автомобиль'); return }
     if (!mileage || !cost) { toast.error('Заполните пробег и стоимость'); return }
+
+    const payload = {
+      car_id: effectiveCarId,
+      service_type: serviceType as any,
+      custom_type: customType || undefined,
+      date,
+      mileage: Number(mileage),
+      cost: Number(cost),
+      description: description || undefined,
+      service_center: serviceCenter || undefined,
+    }
+
     try {
-      await createMaintenance.mutateAsync({
-        car_id: effectiveCarId,
-        service_type: serviceType as any,
-        custom_type: customType || undefined,
-        date,
-        mileage: Number(mileage),
-        cost: Number(cost),
-        description: description || undefined,
-        service_center: serviceCenter || undefined,
-      })
-      toast.success(id ? 'Запись обновлена' : 'Запись добавлена')
+      if (isEditing && id) {
+        await updateMaintenance.mutateAsync({ id, data: payload })
+        toast.success('Запись обновлена')
+      } else {
+        await createMaintenance.mutateAsync(payload)
+        toast.success('Запись добавлена')
+      }
       navigate('/maintenance')
     } catch (err: any) {
       toast.error(err.response?.data?.detail || 'Ошибка')
@@ -98,7 +108,7 @@ export default function MaintenanceFormPage() {
   }
 
   return (
-    <PageWrapper title={id ? 'Редактировать запись' : t('maintenance.add')} backTo="/maintenance">
+    <PageWrapper title={isEditing ? 'Редактировать запись' : t('maintenance.add')} backTo="/maintenance">
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="rounded-2xl border border-surface-200 bg-white p-6 dark:border-surface-700 dark:bg-surface-800">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -117,7 +127,7 @@ export default function MaintenanceFormPage() {
         </div>
         <div className="flex justify-end gap-3">
           <Button variant="secondary" type="button" onClick={() => navigate('/maintenance')}>{t('common.cancel')}</Button>
-          <Button type="submit" loading={createMaintenance.isPending}>{id ? 'Сохранить' : t('common.save')}</Button>
+          <Button type="submit" loading={createMaintenance.isPending || updateMaintenance.isPending}>{isEditing ? 'Сохранить' : t('common.save')}</Button>
         </div>
       </form>
     </PageWrapper>
