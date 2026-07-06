@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Gauge, Fuel, Shield, CalendarCheck } from 'lucide-react'
+import { Gauge, Fuel, Shield } from 'lucide-react'
 import type { Car } from '../../types/car.types'
 import { resolveFileUrl } from '../../utils/resolveFileUrl'
 import { clsx } from 'clsx'
@@ -20,7 +20,7 @@ export default function CarCard({ car }: { car: Car }) {
       onClick={() => navigate(`/cars/${car.id}`)}
       className="card-interactive overflow-hidden"
     >
-      {/* Photo */}
+      {/* Photo — no negative margins, fits inside card naturally */}
       <div className="relative -mx-5 -mt-5 mb-4 aspect-[16/10] overflow-hidden sm:-mx-5 sm:-mt-5">
         {resolvedPhotoUrl ? (
           <img
@@ -34,16 +34,14 @@ export default function CarCard({ car }: { car: Car }) {
             <span className="text-4xl opacity-30">🚗</span>
           </div>
         )}
-        {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
-        {/* Year badge */}
         <span className="absolute bottom-3 left-3 rounded-md bg-white/90 px-2 py-0.5 text-xs font-semibold text-surface-800 backdrop-blur-sm dark:bg-surface-900/90 dark:text-surface-100">
           {car.year}
         </span>
       </div>
 
       {/* Info */}
-      <div>
+      <div className="px-5 pb-1">
         <h3 className="text-[15px] font-semibold tracking-tight text-surface-900 dark:text-white">
           {car.brand} {car.model}
         </h3>

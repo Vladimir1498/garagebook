@@ -124,7 +124,7 @@ export default function DocumentsPage() {
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 page-enter-stagger">
           {filteredDocuments.map((doc) => (
-            <div key={doc.id} className="card group overflow-hidden">
+            <div key={doc.id} className="card">
               <div className="flex items-start gap-3">
                 <div className={clsx('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', categoryColors[doc.category] || categoryColors.other)}>
                   <FileText className="h-4 w-4" strokeWidth={1.75} />
@@ -140,7 +140,7 @@ export default function DocumentsPage() {
                 </a>
                 <button
                   onClick={() => { if (confirm('Удалить документ?')) deleteDocument.mutate(doc.id, { onSuccess: () => toast.success('Документ удалён') }) }}
-                  className="rounded-lg p-2 text-surface-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30"
+                  className="shrink-0 rounded-lg p-2 text-surface-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>

@@ -67,28 +67,29 @@ export default function CarDetailPage() {
       </button>
 
       {/* Hero */}
-      <div className="card-interactive overflow-hidden">
+      <div className="overflow-hidden rounded-xl border border-surface-200 bg-white dark:border-surface-700 dark:bg-surface-800">
         {photoUrl && (
-          <div className="relative -mx-5 -mt-5 mb-5 aspect-[21/9] overflow-hidden sm:-mx-5 sm:-mt-5 sm:mb-5">
+          <div className="relative aspect-[21/9] overflow-hidden">
             <img src={photoUrl} alt={`${car.brand} ${car.model}`} className="h-full w-full object-cover" loading="lazy" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-            <div className="absolute bottom-4 left-5 right-5">
-              <h1 className="text-2xl font-bold text-white drop-shadow-lg sm:text-3xl">{car.brand} {car.model}</h1>
-              <p className="mt-1 text-sm text-white/80">{car.year} · {car.mileage.toLocaleString('ru')} км</p>
+            <div className="absolute bottom-4 left-4 right-4 sm:left-5 sm:right-5">
+              <h1 className="text-xl font-bold text-white drop-shadow-lg sm:text-2xl lg:text-3xl">{car.brand} {car.model}</h1>
+              <p className="mt-1 text-xs text-white/80 sm:text-sm">{car.year} · {car.mileage.toLocaleString('ru')} км</p>
             </div>
           </div>
         )}
 
         {!photoUrl && (
-          <div className="mb-4 flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-surface-900 dark:text-white sm:text-3xl">{car.brand} {car.model}</h1>
+          <div className="px-5 pt-5 pb-1">
+            <h1 className="text-xl font-bold tracking-tight text-surface-900 dark:text-white sm:text-2xl lg:text-3xl">{car.brand} {car.model}</h1>
           </div>
         )}
 
-        <CarPhotoGallery photoUrl={car.photo_url} onUpload={(file) => uploadPhoto.mutate({ id: id!, file })} />
+        <div className="p-5">
+          <CarPhotoGallery photoUrl={car.photo_url} onUpload={(file) => uploadPhoto.mutate({ id: id!, file })} />
 
-        {/* Quick stats */}
-        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {/* Quick stats */}
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
           <div className="rounded-lg bg-surface-50 p-3 dark:bg-surface-700/50">
             <p className="text-[10px] font-medium uppercase tracking-wider text-surface-400">Пробег</p>
             <p className="mt-0.5 text-sm font-semibold text-surface-900 tabular-nums dark:text-white">{car.mileage.toLocaleString('ru')} км</p>
@@ -111,6 +112,7 @@ export default function CarDetailPage() {
               </div>
             </div>
           )}
+        </div>
         </div>
       </div>
 

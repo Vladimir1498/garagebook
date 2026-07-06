@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 import { LayoutDashboard, Car, Wrench, DollarSign, Plus, MoreHorizontal, FileText, Bell, Users, Settings } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { clsx } from 'clsx'
@@ -19,14 +20,22 @@ const moreItems = [
   { path: '/settings', icon: Settings, label: 'nav.settings' },
 ]
 
+const quickAddItems = [
+  { path: '/cars/new', icon: Car, label: 'Автомобиль' },
+  { path: '/maintenance/new', icon: Wrench, label: 'Обслуживание' },
+  { path: '/expenses/new', icon: DollarSign, label: 'Расход' },
+]
+
 export default function MobileNav() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const [showMore, setShowMore] = useState(false)
+  const [showQuickAdd, setShowQuickAdd] = useState(false)
 
   return (
     <>
       <nav
-        className="fixed bottom-0 left-0 right-0 z-40 border-t border-surface-100 bg-white/90 backdrop-blur-xl dark:border-surface-700/50 dark:bg-surface-900/90 lg:hidden"
+        className="fixed bottom-0 left-0 right-0 z-40 border-t border-surface-100 bg-white/95 backdrop-blur-xl dark:border-surface-700/50 dark:bg-surface-900/95 lg:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         <div className="flex items-center justify-around px-2 pt-1.5 pb-1">
@@ -47,9 +56,9 @@ export default function MobileNav() {
             </NavLink>
           ))}
 
-          {/* Center add button */}
+          {/* Center add button — opens quick-add menu */}
           <button
-            onClick={() => window.dispatchEvent(new CustomEvent('quick-add'))}
+            onClick={() => setShowQuickAdd(true)}
             className="flex h-10 w-10 -mt-4 items-center justify-center rounded-full bg-primary-500 text-white shadow-lg transition-all active:scale-95"
           >
             <Plus className="h-5 w-5" strokeWidth={2.5} />
@@ -75,6 +84,41 @@ export default function MobileNav() {
         </div>
       </nav>
 
+      {/* Quick-add bottom sheet */}
+      {showQuickAdd && (
+        <div className="fixed inset-0 z-50 lg:hidden" onClick={() => setShowQuickAdd(false)}>
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm animate-fade-in" />
+          <div className="absolute bottom-0 left-0 right-0 animate-slide-up rounded-t-2xl bg-white shadow-elevated dark:bg-surface-800"
+               style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}>
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="h-1 w-10 rounded-full bg-surface-300 dark:bg-surface-600" />
+            </div>
+            <p className="px-5 pb-2 text-xs font-medium text-surface-400">Быстрое добавление</p>
+            <div className="space-y-1 px-3 pb-2">
+              {quickAddItems.map(({ path, icon: Icon, label }) => (
+                <button
+                  key={path}
+                  onClick={() => { setShowQuickAdd(false); navigate(path) }}
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors hover:bg-surface-50 dark:hover:bg-surface-700/50"
+                >
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 text-primary-500 dark:bg-primary-950/30">
+                    <Icon className="h-4.5 w-4.5" strokeWidth={1.75} />
+                  </div>
+                  <span className="text-sm font-medium text-surface-800 dark:text-surface-100">{label}</span>
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setShowQuickAdd(false)}
+              className="w-full border-t border-surface-100 py-3 text-sm font-medium text-surface-500 dark:border-surface-700"
+            >
+              Отмена
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* More bottom sheet */}
       {showMore && (
         <div className="fixed inset-0 z-50 lg:hidden" onClick={() => setShowMore(false)}>
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm animate-fade-in" />
