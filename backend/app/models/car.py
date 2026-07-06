@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Integer, Numeric, Date, ForeignKey, Enum as SAEnum
+from sqlalchemy import Column, String, Integer, Numeric, Date, ForeignKey, Enum as SAEnum, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.models.base import Base, TimestampMixin
@@ -36,7 +36,7 @@ class Car(TimestampMixin, Base):
     color = Column(String(50), nullable=True)
     mileage = Column(Integer, default=0)
     purchase_date = Column(Date, nullable=True)
-    photo_url = Column(String(500), nullable=True)
+    photo_url = Column(Text, nullable=True)
     insurance_expiry = Column(Date, nullable=True)
     inspection_expiry = Column(Date, nullable=True)
 
