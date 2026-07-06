@@ -71,6 +71,10 @@ function ReminderForm({ cars, onClose }: { cars: any[]; onClose: () => void }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!title.trim()) { toast.error('Введите название'); return }
+    if (!carId) { toast.error('Выберите автомобиль'); return }
+    if (type === 'date' && !triggerDate) { toast.error('Выберите дату'); return }
+    if (type === 'mileage' && !triggerMileage) { toast.error('Укажите пробег'); return }
     try {
       await createReminder.mutateAsync({
         car_id: carId, title, reminder_type: type as any,
