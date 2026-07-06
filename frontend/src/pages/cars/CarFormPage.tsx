@@ -44,13 +44,15 @@ export default function CarFormPage() {
       <CarForm initialData={car} onSubmit={handleSubmit} isLoading={createCar.isPending || updateCar.isPending} />
 
       <Modal isOpen={showTierModal} onClose={() => setShowTierModal(false)} title="Лимит тарифа" size="sm">
-        <div className="text-center py-4">
-          <Lock className="mx-auto h-10 w-10 text-primary-500 mb-3" />
-          <p className="text-surface-600">На бесплатном тарифе можно добавить только 1 автомобиль.</p>
-          <p className="mt-1 text-sm text-surface-500">Обновите тариф для неограниченного количества.</p>
+        <div className="text-center">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-50 dark:bg-primary-950/30">
+            <Lock className="h-5 w-5 text-primary-500" />
+          </div>
+          <p className="text-sm text-surface-600 dark:text-surface-300">На бесплатном тарифе можно добавить только 1 автомобиль.</p>
+          <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">Обновите тариф для неограниченного количества.</p>
         </div>
-        <div className="flex justify-center gap-3 mt-4">
-          <Button variant="secondary" onClick={() => setShowTierModal(false)}>Закрыть</Button>
+        <div className="mt-5 flex justify-center gap-2">
+          <Button variant="ghost" onClick={() => setShowTierModal(false)}>Закрыть</Button>
           <Button onClick={() => navigate('/pricing')}>Обновить тариф</Button>
         </div>
       </Modal>

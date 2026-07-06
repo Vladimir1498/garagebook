@@ -13,8 +13,8 @@ export default function Card({ children, className, hover, onClick }: CardProps)
     <div
       onClick={onClick}
       className={clsx(
-        'rounded-2xl border border-surface-200 bg-white p-5 shadow-card transition-all duration-200 dark:border-surface-700 dark:bg-surface-800',
-        hover && 'cursor-pointer hover:shadow-card-hover hover:-translate-y-0.5',
+        'rounded-xl border border-surface-200 bg-white p-5 dark:border-surface-700 dark:bg-surface-800',
+        hover ? 'card-interactive' : 'card',
         onClick && 'cursor-pointer',
         className
       )}

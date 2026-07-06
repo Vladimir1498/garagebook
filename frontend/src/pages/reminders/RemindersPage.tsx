@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Bell, Check, Plus, Trash2, Clock } from 'lucide-react'
+import { Bell, Check, Plus, Trash2, Clock, CalendarClock } from 'lucide-react'
 import { useRemindersList, useCompleteReminder, useDeleteReminder, useCreateReminder } from '../../hooks/useReminders'
 import { useCars } from '../../hooks/useCars'
-import PageWrapper from '../../components/layout/PageWrapper'
 import Button from '../../components/ui/Button'
 import EmptyState from '../../components/ui/EmptyState'
 import Skeleton from '../../components/ui/Skeleton'
@@ -11,6 +10,7 @@ import Modal from '../../components/ui/Modal'
 import Input from '../../components/ui/Input'
 import Select from '../../components/ui/Select'
 import toast from 'react-hot-toast'
+import { clsx } from 'clsx'
 
 export default function RemindersPage() {
   const { t } = useTranslation()
@@ -23,40 +23,81 @@ export default function RemindersPage() {
   const cars = carsData?.data?.data || []
   const [showCreate, setShowCreate] = useState(false)
 
+  const overdue = reminders.filter(r => !r.is_completed && r.trigger_date && new Date(r.trigger_date) < new Date())
+  const thisWeek = reminders.filter(r => !r.is_completed && r.trigger_date && (() => { const d = Math.ceil((new Date(r.trigger_date).getTime() - Date.now()) / 86400000); return d > 0 && d <= 7 })())
+  const upcoming = reminders.filter(r => !r.is_completed && r.trigger_date && Math.ceil((new Date(r.trigger_date).getTime() - Date.now()) / 86400000) > 7)
+  const completed = reminders.filter(r => r.is_completed)
+  const other = reminders.filter(r => !r.is_completed && !r.trigger_date)
+
+  const sections = [
+    { title: 'Просроченные', items: overdue, color: 'bg-red-50 text-red-500 dark:bg-red-950/30 dark:text-red-400', dot: 'bg-red-500' },
+    { title: 'На этой неделе', items: thisWeek, color: 'bg-amber-50 text-amber-500 dark:bg-amber-950/30 dark:text-amber-400', dot: 'bg-amber-500' },
+    { title: 'Ближайшие', items: upcoming, color: 'bg-primary-50 text-primary-500 dark:bg-primary-950/30 dark:text-primary-400', dot: 'bg-primary-500' },
+    { title: 'По пробегу', items: other, color: 'bg-surface-100 text-surface-500 dark:bg-surface-700 dark:text-surface-400', dot: 'bg-surface-400' },
+    { title: 'Выполненные', items: completed, color: 'bg-emerald-50 text-emerald-500 dark:bg-emerald-950/30 dark:text-emerald-400', dot: 'bg-emerald-500' },
+  ].filter(s => s.items.length > 0)
+
   return (
-    <PageWrapper title={t('reminders.title')} action={<Button onClick={() => setShowCreate(true)}><Plus className="h-4 w-4" />{t('reminders.add')}</Button>}>
+    <div className="space-y-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold tracking-tight text-surface-900 dark:text-white sm:text-2xl">{t('reminders.title')}</h1>
+          <p className="mt-0.5 text-sm text-surface-500 dark:text-surface-400">{reminders.length} напоминаний</p>
+        </div>
+        <Button onClick={() => setShowCreate(true)} iconLeft={<Plus />}>{t('reminders.add')}</Button>
+      </div>
+
       {isLoading ? (
-        <div className="space-y-3">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-16" />)}</div>
+        <div className="space-y-2">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-14" />)}</div>
       ) : reminders.length === 0 ? (
-        <EmptyState icon={<Bell className="h-12 w-12" />} title="Нет напоминаний" description="Создайте первое напоминание" />
+        <EmptyState icon={<Bell className="h-7 w-7" />} title="Нет напоминаний" description="Создайте первое напоминание" action={<Button onClick={() => setShowCreate(true)} iconLeft={<Plus />}>Создать</Button>} />
       ) : (
-        <div className="space-y-2">
-          {reminders.map((r) => {
-            const daysLeft = r.trigger_date ? Math.ceil((new Date(r.trigger_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null
-            const isUrgent = daysLeft !== null && daysLeft <= 30
-            return (
-              <div key={r.id} className={`flex items-center gap-3 rounded-xl border p-3 transition-all dark:bg-surface-800 ${r.is_completed ? 'border-surface-200 bg-surface-50 opacity-60 dark:border-surface-700' : isUrgent ? 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/10' : 'border-surface-200 bg-white dark:border-surface-700'}`}>
-                <div className={`rounded-lg p-2 ${r.is_completed ? 'bg-surface-200 dark:bg-surface-600' : isUrgent ? 'bg-red-100 dark:bg-red-900/30' : 'bg-primary-50 dark:bg-primary-900/20'}`}>
-                  {r.is_completed ? <Check className="h-4 w-4 text-surface-500" /> : <Clock className="h-4 w-4 text-primary-500" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium ${r.is_completed ? 'text-surface-500 line-through' : 'text-surface-900 dark:text-white'}`}>{r.title}</p>
-                  <p className="text-xs text-surface-500">{r.reminder_type === 'mileage' ? `через ${r.trigger_mileage} км` : r.trigger_date ? new Date(r.trigger_date).toLocaleDateString('ru') : ''}</p>
-                </div>
-                <div className="flex gap-1">
-                  {!r.is_completed && <button onClick={() => completeReminder.mutate(r.id)} className="rounded-lg p-2 text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"><Check className="h-4 w-4" /></button>}
-                  <button onClick={() => deleteReminder.mutate(r.id)} className="rounded-lg p-2 text-surface-400 hover:text-red-500"><Trash2 className="h-4 w-4" /></button>
-                </div>
+        <div className="space-y-5">
+          {sections.map(({ title, items, color, dot }) => (
+            <div key={title}>
+              <h3 className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-surface-500 dark:text-surface-400">
+                <span className={clsx('h-2 w-2 rounded-full', dot)} />
+                {title}
+                <span className="rounded-full bg-surface-100 px-1.5 py-0.5 text-[10px] font-medium dark:bg-surface-700">{items.length}</span>
+              </h3>
+              <div className="space-y-1.5">
+                {items.map((r) => {
+                  const daysLeft = r.trigger_date ? Math.ceil((new Date(r.trigger_date).getTime() - Date.now()) / 86400000) : null
+                  return (
+                    <div key={r.id} className="card flex items-center gap-3 p-3">
+                      <div className={clsx('flex h-8 w-8 shrink-0 items-center justify-center rounded-lg', r.is_completed ? 'bg-surface-100 dark:bg-surface-700' : color)}>
+                        {r.is_completed ? <Check className="h-4 w-4 text-emerald-500" strokeWidth={2} /> : <Clock className="h-4 w-4" strokeWidth={1.75} />}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className={clsx('text-sm font-medium', r.is_completed ? 'text-surface-400 line-through' : 'text-surface-800 dark:text-surface-100')}>{r.title}</p>
+                        <p className="text-xs text-surface-400">
+                          {r.reminder_type === 'mileage' ? `${r.trigger_mileage?.toLocaleString('ru')} км` : r.trigger_date ? new Date(r.trigger_date).toLocaleDateString('ru', { day: 'numeric', month: 'short' }) : ''}
+                          {daysLeft !== null && !r.is_completed && <span className="ml-1 tabular-nums">{daysLeft > 0 ? `через ${daysLeft} дн.` : 'сегодня'}</span>}
+                        </p>
+                      </div>
+                      <div className="flex gap-0.5">
+                        {!r.is_completed && (
+                          <button onClick={() => completeReminder.mutate(r.id)} className="rounded-lg p-2 text-emerald-500 transition-colors hover:bg-emerald-50 dark:hover:bg-emerald-950/30" title="Выполнено">
+                            <Check className="h-4 w-4" strokeWidth={2} />
+                          </button>
+                        )}
+                        <button onClick={() => { if (confirm('Удалить напоминание?')) deleteReminder.mutate(r.id, { onSuccess: () => toast.success('Напоминание удалено') }) }} className="rounded-lg p-2 text-surface-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30" title="Удалить">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
-            )
-          })}
+            </div>
+          ))}
         </div>
       )}
 
       <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="Новое напоминание">
         <ReminderForm cars={cars} onClose={() => setShowCreate(false)} />
       </Modal>
-    </PageWrapper>
+    </div>
   )
 }
 
@@ -93,9 +134,9 @@ function ReminderForm({ cars, onClose }: { cars: any[]; onClose: () => void }) {
       <Select label="Тип" options={[{ value: 'date', label: 'По дате' }, { value: 'mileage', label: 'По пробегу' }]} value={type} onChange={(e) => setType(e.target.value)} />
       {type === 'date' && <Input label="Дата" type="date" value={triggerDate} onChange={(e) => setTriggerDate(e.target.value)} required />}
       {type === 'mileage' && <Input label="Пробег (км)" type="number" value={triggerMileage} onChange={(e) => setTriggerMileage(e.target.value)} required />}
-      <div className="flex justify-end gap-2">
-        <Button variant="ghost" type="button" onClick={onClose}>{t('common.cancel')}</Button>
-        <Button type="submit" loading={createReminder.isPending}>{t('common.save')}</Button>
+      <div className="flex justify-end gap-2 pt-2">
+        <Button variant="ghost" type="button" onClick={onClose}>Отмена</Button>
+        <Button type="submit" loading={createReminder.isPending}>Создать</Button>
       </div>
     </form>
   )

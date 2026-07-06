@@ -6,10 +6,16 @@ interface SkeletonProps {
 
 export default function Skeleton({ className }: SkeletonProps) {
   return (
-    <div className={clsx(
-      'animate-pulse rounded-xl bg-gradient-to-r from-surface-200 via-surface-100 to-surface-200 dark:from-surface-700 dark:via-surface-600 dark:to-surface-700',
-      'bg-[length:200%_100%] animate-shimmer',
-      className
-    )} />
+    <div
+      className={clsx(
+        'rounded-lg bg-surface-100 dark:bg-surface-700/50',
+        className
+      )}
+      style={{
+        backgroundImage: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
+        backgroundSize: '200% 100%',
+        animation: 'shimmer 2s ease-in-out infinite',
+      }}
+    />
   )
 }
