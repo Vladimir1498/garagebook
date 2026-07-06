@@ -85,6 +85,31 @@ async def delete_car(car_id: UUID, user: User = Depends(get_current_user), db: A
     return {"message": "Deleted"}
 
 
+@router.get("/{car_id}/photo")
+async def get_car_photo(
+    car_id: UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Serve car photo directly to avoid StaticFiles path issues."""
+    repo = CarRepository(db)
+    car = await repo.get(car_id)
+    if not car or car.user_id != user.id:
+        raise HTTPException(status_code=404, detail="Car not found")
+    if not car.photo_url:
+        raise HTTPException(status_code=404, detail="No photo")
+
+    # Build absolute path to the file
+    upload_dir = os.path.join(settings.UPLOAD_DIR, "cars", str(car_id))
+    for ext in [".jpg", ".jpeg", ".png", ".webp", ".gif"]:
+        file_path = os.path.join(upload_dir, f"photo{ext}")
+        if os.path.exists(file_path):
+            from fastapi.responses import FileResponse
+            return FileResponse(file_path)
+
+    raise HTTPException(status_code=404, detail="Photo file not found on disk")
+
+
 @router.post("/{car_id}/photo")
 async def upload_photo(
     car_id: UUID,
