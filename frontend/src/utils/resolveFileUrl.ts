@@ -7,7 +7,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
  */
 export function resolveFileUrl(url: string | null | undefined): string {
   if (!url) return ''
-  if (url.startsWith('http://') || url.startsWith('https://')) return url
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return url
 
   // Convert /uploads/cars/{id}/photo.{ext} to /api/v1/cars/{id}/photo
   const carPhotoMatch = url.match(/^\/uploads\/cars\/([^/]+)\/photo\.\w+$/)
