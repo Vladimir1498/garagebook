@@ -2,7 +2,7 @@ import os
 import uuid
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
@@ -82,30 +82,21 @@ async def delete_car(car_id: UUID, user: User = Depends(get_current_user), db: A
 @router.get("/{car_id}/photo")
 async def get_car_photo(car_id: UUID):
     """Serve car photo — supports base64 data URLs stored in DB."""
-    from fastapi.responses import Response
-    from app.core.database import async_session
+    import base64 as b64mod
+    from app.core.database import async_session as sess
 
-    async with async_session() as db:
+    async with sess() as db:
         result = await db.execute(select(Car.photo_url).where(Car.id == car_id))
         photo_url = result.scalar_one_or_none()
 
     if not photo_url:
         raise HTTPException(status_code=404, detail="Photo not found")
 
-    # Handle data URL (base64)
     if photo_url.startswith("data:"):
         header, data = photo_url.split(",", 1)
         media_type = header.split(":")[1].split(";")[0]
-        import base64
-        img_bytes = base64.b64decode(data)
+        img_bytes = b64mod.b64decode(data)
         return Response(content=img_bytes, media_type=media_type)
-
-    # Fallback: file on disk
-    upload_dir = os.path.join(settings.UPLOAD_DIR, "cars", str(car_id))
-    for ext in [".jpg", ".jpeg", ".png", ".webp", ".gif"]:
-        file_path = os.path.join(upload_dir, f"photo{ext}")
-        if os.path.exists(file_path):
-            return FileResponse(file_path)
 
     raise HTTPException(status_code=404, detail="Photo not found")
 
@@ -114,7 +105,6 @@ async def get_car_photo(car_id: UUID):
 async def upload_photo(
     car_id: UUID,
     file: UploadFile = File(...),
-    request: Request = None,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -123,17 +113,11 @@ async def upload_photo(
     if not car or car.user_id != user.id:
         raise HTTPException(status_code=404, detail="Car not found")
 
-    upload_dir = os.path.join(settings.UPLOAD_DIR, "cars", str(car_id))
-    os.makedirs(upload_dir, exist_ok=True)
-    ext = os.path.splitext(file.filename or "photo.jpg")[1] or ".jpg"
-    file_path = os.path.join(upload_dir, f"photo{ext}")
+    import base64 as b64mod
     contents = await file.read()
-
-    # Store as base64 in database (persistent across deploys on Railway)
-    import base64
-    b64 = base64.b64encode(contents).decode("utf-8")
+    b64_data = b64mod.b64encode(contents).decode("utf-8")
     content_type = file.content_type or "image/jpeg"
-    photo_url = f"data:{content_type};base64,{b64}"
+    photo_url = f"data:{content_type};base64,{b64_data}"
 
     await repo.update(car_id, photo_url=photo_url)
-    return {"photo_url": "saved to database"}
+    return {"message": "Photo saved to database"}
