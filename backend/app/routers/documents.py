@@ -61,17 +61,26 @@ async def list_documents(
         total_result = await db.execute(select(func.count(Document.id)).where(Document.car_id == car_id))
     else:
         # Get all user's car IDs first
-        cars_result = await db.execute(select(Car.id).where(Car.user_id == user.id))
+        from sqlalchemy import select as sa_select
+        from app.models.car import Car as CarModel
+        cars_result = await db.execute(sa_select(CarModel.id).where(CarModel.user_id == user.id))
         car_ids = [r[0] for r in cars_result.all()]
         if not car_ids:
             documents = []
-            total = 0
-        else:
-            documents = await repo.get_all(skip=skip, limit=limit)
-            total_result = await db.execute(select(func.count(Document.id)))
-            total = total_result.scalar() or 0
+            total_count = 0
+            return {
+                "data": [],
+                "meta": {"page": page, "limit": limit, "total": 0, "total_pages": 1}
+            }
+        # Filter by user's cars
+        from sqlalchemy import or_
+        documents_result = await db.execute(
+            select(Document).where(Document.car_id.in_(car_ids)).offset(skip).limit(limit)
+        )
+        documents = list(documents_result.scalars().all())
+        total_result = await db.execute(select(func.count(Document.id)).where(Document.car_id.in_(car_ids)))
+        total_count = total_result.scalar() or 0
 
-    total_count = total_result.scalar() if car_id else (total if 'total' in dir() else len(documents))
     return {
         "data": [DocumentResponse.model_validate(d) for d in documents],
         "meta": {"page": page, "limit": limit, "total": total_count, "total_pages": max(1, -(-total_count // limit))}
@@ -162,14 +171,25 @@ async def delete_document(doc_id: UUID, user: User = Depends(get_current_user), 
     doc = await repo.get(doc_id)
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
-    if not await _verify_car_ownership(doc.car_id, user.id, db):
+
+    # Verify document belongs to user's car
+    from sqlalchemy import select as sa_select
+    from app.models.car import Car as CarModel
+    result = await db.execute(sa_select(CarModel.id).where(CarModel.id == doc.car_id, CarModel.user_id == user.id))
+    if result.scalar() is None:
         raise HTTPException(status_code=404, detail="Document not found")
 
     # Delete file from disk
     if doc.file_url:
-        file_path = os.path.join(settings.UPLOAD_DIR, doc.file_url.lstrip("/"))
+        # file_url is like /uploads/documents/car_id/filename
+        # UPLOAD_DIR is ./uploads, so we need ./uploads/documents/car_id/filename
+        relative = doc.file_url.lstrip("/")
+        file_path = os.path.join(settings.UPLOAD_DIR, relative.replace("uploads/", "", 1))
         if os.path.exists(file_path):
-            os.remove(file_path)
+            try:
+                os.remove(file_path)
+            except OSError:
+                pass  # File might already be deleted
 
     await repo.delete(doc_id)
     return {"message": "Deleted"}

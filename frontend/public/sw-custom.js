@@ -54,6 +54,14 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
+  // Uploaded files: always network-first (don't cache)
+  if (url.pathname.startsWith('/uploads/')) {
+    event.respondWith(
+      fetch(request).catch(() => new Response('Offline', { status: 503 }))
+    )
+    return
+  }
+
   // Static assets: cache-first
   event.respondWith(
     caches.match(request).then((cached) => {
