@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, NavLink } from 'react-router-dom'
-import { LayoutDashboard, Car, Plus, MoreHorizontal, Wrench, DollarSign, FileText, Bell, BarChart3, Settings } from 'lucide-react'
+import { LayoutDashboard, Car, Plus, MoreHorizontal, Wrench, DollarSign, FileText, Bell, BarChart3, Settings, Users } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { clsx } from 'clsx'
 
@@ -19,7 +19,7 @@ const moreItems = [
   { path: '/maintenance', icon: Wrench, label: 'nav.maintenance' },
   { path: '/expenses', icon: DollarSign, label: 'nav.expenses' },
   { path: '/documents', icon: FileText, label: 'nav.documents' },
-  { path: '/reminders', icon: Bell, label: 'nav.reminders' },
+  { path: '/fleet', icon: Users, label: 'nav.fleet' },
   { path: '/analytics', icon: BarChart3, label: 'nav.analytics' },
   { path: '/settings', icon: Settings, label: 'nav.settings' },
 ]
