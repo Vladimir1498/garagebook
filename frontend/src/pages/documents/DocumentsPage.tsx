@@ -7,7 +7,7 @@ import Button from '../../components/ui/Button'
 import EmptyState from '../../components/ui/EmptyState'
 import Skeleton from '../../components/ui/Skeleton'
 import Badge from '../../components/ui/Badge'
-import Select from '../../components/ui/Select'
+import DropdownSelect from '../../components/ui/DropdownSelect'
 import Modal from '../../components/ui/Modal'
 import toast from 'react-hot-toast'
 import { resolveFileUrl } from '../../utils/resolveFileUrl'
@@ -79,8 +79,8 @@ export default function DocumentsPage() {
             <span className="text-sm font-medium text-surface-700 dark:text-surface-300">Загрузить документ</span>
           </div>
           <div className="flex flex-wrap items-end gap-2">
-            <Select options={cars.map((c) => ({ value: c.id, label: `${c.brand} ${c.model}` }))} value={selectedCar} onChange={(e) => setSelectedCar(e.target.value)} className="w-44" />
-            <Select options={Object.entries(categoryLabels).map(([v, l]) => ({ value: v, label: l }))} value={uploadCategory} onChange={(e) => setUploadCategory(e.target.value)} className="w-44" />
+            <DropdownSelect options={cars.map((c) => ({ value: c.id, label: `${c.brand} ${c.model}` }))} value={selectedCar} onChange={setSelectedCar} className="w-44" />
+            <DropdownSelect options={Object.entries(categoryLabels).map(([v, l]) => ({ value: v, label: l }))} value={uploadCategory} onChange={setUploadCategory} className="w-44" />
           </div>
           {selectedCar && (
             <div className="mt-3 rounded-lg border-2 border-dashed border-surface-200 bg-surface-50/50 p-4 text-center transition-colors hover:border-primary-300 dark:border-surface-600 dark:bg-surface-800/50">

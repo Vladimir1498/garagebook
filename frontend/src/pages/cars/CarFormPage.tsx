@@ -21,12 +21,23 @@ export default function CarFormPage() {
   const car = data?.data
 
   const handleSubmit = async (formData: CarCreate) => {
+    // Clean empty strings → undefined for optional fields
+    const cleaned = {
+      ...formData,
+      vin: formData.vin || undefined,
+      license_plate: formData.license_plate || undefined,
+      engine_volume: formData.engine_volume || undefined,
+      color: formData.color || undefined,
+      purchase_date: formData.purchase_date || undefined,
+      insurance_expiry: formData.insurance_expiry || undefined,
+      inspection_expiry: formData.inspection_expiry || undefined,
+    }
     try {
       if (isEdit && car) {
-        await updateCar.mutateAsync({ id, data: formData })
+        await updateCar.mutateAsync({ id, data: cleaned })
         toast.success('Автомобиль обновлен')
       } else {
-        await createCar.mutateAsync(formData)
+        await createCar.mutateAsync(cleaned)
         toast.success('Автомобиль добавлен')
       }
       navigate('/cars')

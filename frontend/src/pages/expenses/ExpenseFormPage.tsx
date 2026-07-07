@@ -5,7 +5,7 @@ import { useCreateExpense } from '../../hooks/useExpenses'
 import { useCars } from '../../hooks/useCars'
 import PageWrapper from '../../components/layout/PageWrapper'
 import Input from '../../components/ui/Input'
-import Select from '../../components/ui/Select'
+import DropdownSelect from '../../components/ui/DropdownSelect'
 import Button from '../../components/ui/Button'
 import toast from 'react-hot-toast'
 
@@ -53,8 +53,8 @@ export default function ExpenseFormPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="rounded-2xl border border-surface-200 bg-white p-6 dark:border-surface-700 dark:bg-surface-800">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Select label="Автомобиль *" options={carOptions} value={carId} onChange={(e) => setCarId(e.target.value)} disabled={carOptions.length <= 1} />
-            <Select label="Категория" options={categoryOptions} value={category} onChange={(e) => setCategory(e.target.value)} />
+            <DropdownSelect label="Автомобиль *" options={carOptions} value={carId} onChange={setCarId} disabled={carOptions.length <= 1} />
+            <DropdownSelect label="Категория" options={categoryOptions} value={category} onChange={setCategory} />
             <Input label="Сумма (₽) *" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} required />
             <Input label="Дата *" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
             <div className="sm:col-span-2">

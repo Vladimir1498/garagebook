@@ -5,7 +5,7 @@ import { useCreateMaintenance, useUpdateMaintenance, useMaintenance } from '../.
 import { useCars } from '../../hooks/useCars'
 import PageWrapper from '../../components/layout/PageWrapper'
 import Input from '../../components/ui/Input'
-import Select from '../../components/ui/Select'
+import DropdownSelect from '../../components/ui/DropdownSelect'
 import Button from '../../components/ui/Button'
 import Skeleton from '../../components/ui/Skeleton'
 import toast from 'react-hot-toast'
@@ -112,8 +112,8 @@ export default function MaintenanceFormPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="rounded-2xl border border-surface-200 bg-white p-6 dark:border-surface-700 dark:bg-surface-800">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Select label="Автомобиль" options={carOptions} value={effectiveCarId} onChange={() => {}} disabled />
-            <Select label="Тип работ" options={typeOptions} value={serviceType} onChange={(e) => setServiceType(e.target.value)} />
+            <DropdownSelect label="Автомобиль" options={carOptions} value={effectiveCarId} onChange={() => {}} disabled />
+            <DropdownSelect label="Тип работ" options={typeOptions} value={serviceType} onChange={setServiceType} />
             {serviceType === 'custom' && <Input label="Тип (свой)" value={customType} onChange={(e) => setCustomType(e.target.value)} placeholder="Название работ" />}
             <Input label="Дата *" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
             <Input label="Пробег (км) *" type="number" value={mileage} onChange={(e) => setMileage(e.target.value)} required placeholder="50000" />

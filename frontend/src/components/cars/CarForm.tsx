@@ -1,8 +1,8 @@
 import { useForm, Controller } from 'react-hook-form'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import type { Car, CarCreate } from '../../types/car.types'
 import Input from '../ui/Input'
-import Select from '../ui/Select'
+import DropdownSelect from '../ui/DropdownSelect'
 import Autocomplete from '../ui/Autocomplete'
 import Button from '../ui/Button'
 import { POPULAR_BRANDS, POPULAR_MODELS } from '../../utils/constants'
@@ -107,9 +107,21 @@ export default function CarForm({ initialData, onSubmit, isLoading }: CarFormPro
           <Input label="Год *" type="number" error={errors.year?.message} {...register('year', { required: 'Обязательное поле', min: 1900, max: new Date().getFullYear() + 1 })} />
           <Input label="VIN" {...register('vin')} placeholder="17 символов" maxLength={17} />
           <Input label="Госномер" {...register('license_plate')} placeholder="А123БВ777" />
-          <Select label="Топливо" options={fuelOptions} {...register('fuel_type')} />
+          <Controller
+            name="fuel_type"
+            control={control}
+            render={({ field }) => (
+              <DropdownSelect label="Топливо" options={fuelOptions} value={field.value} onChange={field.onChange} />
+            )}
+          />
           <Input label="Объем двигателя" type="number" step="0.1" {...register('engine_volume')} placeholder="2.0" />
-          <Select label="Коробка передач" options={transmissionOptions} {...register('transmission')} />
+          <Controller
+            name="transmission"
+            control={control}
+            render={({ field }) => (
+              <DropdownSelect label="Коробка передач" options={transmissionOptions} value={field.value} onChange={field.onChange} />
+            )}
+          />
           <Input label="Цвет" {...register('color')} placeholder="Белый" />
           <Input label="Пробег (км)" type="number" {...register('mileage', { min: 0 })} />
           <Input label="Дата покупки" type="date" {...register('purchase_date')} />

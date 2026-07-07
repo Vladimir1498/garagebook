@@ -8,7 +8,7 @@ import EmptyState from '../../components/ui/EmptyState'
 import Skeleton from '../../components/ui/Skeleton'
 import Modal from '../../components/ui/Modal'
 import Input from '../../components/ui/Input'
-import Select from '../../components/ui/Select'
+import DropdownSelect from '../../components/ui/DropdownSelect'
 import toast from 'react-hot-toast'
 import { clsx } from 'clsx'
 
@@ -130,8 +130,8 @@ function ReminderForm({ cars, onClose }: { cars: any[]; onClose: () => void }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <Input label="Название" value={title} onChange={(e) => setTitle(e.target.value)} required placeholder="Замена масла" />
-      <Select label="Автомобиль" options={cars.map((c: any) => ({ value: c.id, label: `${c.brand} ${c.model}` }))} value={carId} onChange={(e) => setCarId(e.target.value)} />
-      <Select label="Тип" options={[{ value: 'date', label: 'По дате' }, { value: 'mileage', label: 'По пробегу' }]} value={type} onChange={(e) => setType(e.target.value)} />
+      <DropdownSelect label="Автомобиль" options={cars.map((c: any) => ({ value: c.id, label: `${c.brand} ${c.model}` }))} value={carId} onChange={setCarId} />
+      <DropdownSelect label="Тип" options={[{ value: 'date', label: 'По дате' }, { value: 'mileage', label: 'По пробегу' }]} value={type} onChange={setType} />
       {type === 'date' && <Input label="Дата" type="date" value={triggerDate} onChange={(e) => setTriggerDate(e.target.value)} required />}
       {type === 'mileage' && <Input label="Пробег (км)" type="number" value={triggerMileage} onChange={(e) => setTriggerMileage(e.target.value)} required />}
       <div className="flex justify-end gap-2 pt-2">
