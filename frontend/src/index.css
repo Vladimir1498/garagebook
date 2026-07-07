@@ -23,6 +23,8 @@
     --border: #E8ECF0;
     --border-hover: #D1D5DB;
     --ring: rgba(37, 99, 235, 0.2);
+    --toast-bg: #FFFFFF;
+    --toast-color: #111827;
   }
 
   .dark {
@@ -45,6 +47,8 @@
     --border: #1E2536;
     --border-hover: #2D3548;
     --ring: rgba(37, 99, 235, 0.3);
+    --toast-bg: #1A2030;
+    --toast-color: #F1F3F5;
   }
 
   * {
