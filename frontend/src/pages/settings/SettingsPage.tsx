@@ -4,7 +4,7 @@ import { Sun, Moon, Monitor, Globe, Download, Trash2, Bell, FileText } from 'luc
 import { useAuth } from '../../hooks/useAuth'
 import { ThemeContext } from '../../contexts/ThemeContext'
 import Button from '../../components/ui/Button'
-import Select from '../../components/ui/Select'
+import DropdownSelect from '../../components/ui/DropdownSelect'
 import Modal from '../../components/ui/Modal'
 import Toggle from '../../components/ui/Toggle'
 import PushToggle from '../../components/pwa/PushToggle'
@@ -70,10 +70,10 @@ export default function SettingsPage() {
               {theme === 'dark' ? <Moon className="h-4 w-4 text-surface-400" /> : theme === 'light' ? <Sun className="h-4 w-4 text-surface-400" /> : <Monitor className="h-4 w-4 text-surface-400" />}
               <span className="text-sm font-medium text-surface-800 dark:text-surface-200">{t('settings.theme')}</span>
             </div>
-            <Select
+            <DropdownSelect
               options={[{ value: 'light', label: 'Светлая' }, { value: 'dark', label: 'Тёмная' }, { value: 'system', label: 'Системная' }]}
               value={theme}
-              onChange={(e) => setTheme(e.target.value as any)}
+              onChange={(v) => setTheme(v as any)}
               className="w-36"
             />
           </div>
@@ -82,10 +82,10 @@ export default function SettingsPage() {
               <Globe className="h-4 w-4 text-surface-400" />
               <span className="text-sm font-medium text-surface-800 dark:text-surface-200">{t('settings.language')}</span>
             </div>
-            <Select
+            <DropdownSelect
               options={[{ value: 'ru', label: 'Русский' }, { value: 'en', label: 'English' }]}
               value={i18n.language}
-              onChange={(e) => { i18n.changeLanguage(e.target.value); localStorage.setItem('language', e.target.value) }}
+              onChange={(v) => { i18n.changeLanguage(v); localStorage.setItem('language', v) }}
               className="w-36"
             />
           </div>
