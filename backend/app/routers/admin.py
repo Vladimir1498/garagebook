@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select, func, text
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.deps import get_current_admin
 from app.core.database import get_db
@@ -13,76 +13,109 @@ from app.models.subscription import Subscription, SubscriptionTier
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
 
-# ── Stats ──────────────────────────────────────────────
-
 @router.get("/stats")
 async def get_stats(user=Depends(get_current_admin), db: AsyncSession = Depends(get_db)):
-    user_count = (await db.execute(select(func.count()).select_from(User))).scalar() or 0
-    car_count = (await db.execute(select(func.count()).select_from(Car))).scalar() or 0
-    maintenance_count = (await db.execute(select(func.count()).select_from(MaintenanceRecord))).scalar() or 0
-    total_revenue = (await db.execute(select(func.coalesce(func.sum(Expense.amount), 0)))).scalar() or 0
-
-    # Subscriptions by tier
-    tier_result = await db.execute(
-        select(Subscription.tier, func.count()).group_by(Subscription.tier)
-    )
-    tiers = {row[0]: row[1] for row in tier_result.all()}
-
-    # Registrations last 30 days
-    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
-    reg_result = await db.execute(
-        select(func.date(User.created_at), func.count())
-        .where(User.created_at >= thirty_days_ago)
-        .group_by(func.date(User.created_at))
-        .order_by(func.date(User.created_at))
-    )
-    registrations = [{"date": str(r[0]), "count": r[1]} for r in reg_result.all()]
-
-    # Revenue last 12 months
-    twelve_months_ago = datetime.utcnow() - timedelta(days=365)
-    rev_result = await db.execute(
-        select(func.date_trunc('month', Expense.date), func.coalesce(func.sum(Expense.amount), 0))
-        .where(Expense.date >= twelve_months_ago)
-        .group_by(func.date_trunc('month', Expense.date))
-        .order_by(func.date_trunc('month', Expense.date))
-    )
-    revenue = [{"month": str(r[0].date()) if r[0] else "未知", "total": float(r[1])} for r in rev_result.all()]
-
-    # Top 5 active users (most cars)
-    top_users_result = await db.execute(
-        select(User.full_name, User.email, func.count(Car.id).label("car_count"))
-        .join(Car, Car.user_id == User.id, isouter=True)
-        .group_by(User.id, User.full_name, User.email)
-        .order_by(func.count(Car.id).desc())
-        .limit(5)
-    )
-    top_users = [{"name": r[0], "email": r[1], "cars": r[2]} for r in top_users_result.all()]
-
-    return {
-        "user_count": user_count,
-        "car_count": car_count,
-        "maintenance_count": maintenance_count,
-        "total_revenue": float(total_revenue),
-        "tiers": tiers,
-        "registrations": registrations,
-        "revenue": revenue,
-        "top_users": top_users,
+    result = {
+        "user_count": 0,
+        "car_count": 0,
+        "maintenance_count": 0,
+        "total_revenue": 0,
+        "tiers": {},
+        "registrations": [],
+        "revenue": [],
+        "top_users": [],
     }
 
+    try:
+        result["user_count"] = (await db.execute(select(func.count()).select_from(User))).scalar() or 0
+    except Exception:
+        pass
 
-# ── Users CRUD ─────────────────────────────────────────
+    try:
+        result["car_count"] = (await db.execute(select(func.count()).select_from(Car))).scalar() or 0
+    except Exception:
+        pass
+
+    try:
+        result["maintenance_count"] = (await db.execute(select(func.count()).select_from(MaintenanceRecord))).scalar() or 0
+    except Exception:
+        pass
+
+    try:
+        r = await db.execute(select(func.coalesce(func.sum(Expense.amount), 0)))
+        result["total_revenue"] = float(r.scalar() or 0)
+    except Exception:
+        pass
+
+    # Subscriptions by tier
+    try:
+        tier_result = await db.execute(
+            select(Subscription.tier, func.count()).group_by(Subscription.tier)
+        )
+        result["tiers"] = {str(row[0].value): row[1] for row in tier_result.all()}
+    except Exception:
+        pass
+
+    # Registrations last 30 days
+    try:
+        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+        reg_result = await db.execute(
+            select(func.date(User.created_at), func.count())
+            .where(User.created_at >= thirty_days_ago)
+            .group_by(func.date(User.created_at))
+            .order_by(func.date(User.created_at))
+        )
+        result["registrations"] = [{"date": str(r[0]), "count": r[1]} for r in reg_result.all()]
+    except Exception:
+        pass
+
+    # Revenue last 12 months (use created_at which is DateTime)
+    try:
+        twelve_months_ago = datetime.utcnow() - timedelta(days=365)
+        rev_result = await db.execute(
+            select(
+                func.date_trunc('month', Expense.created_at),
+                func.coalesce(func.sum(Expense.amount), 0)
+            )
+            .where(Expense.created_at >= twelve_months_ago)
+            .group_by(func.date_trunc('month', Expense.created_at))
+            .order_by(func.date_trunc('month', Expense.created_at))
+        )
+        result["revenue"] = [
+            {"month": str(r[0].date()) if r[0] else "未知", "total": float(r[1])}
+            for r in rev_result.all()
+        ]
+    except Exception:
+        pass
+
+    # Top 5 active users
+    try:
+        top_result = await db.execute(
+            select(User.full_name, User.email, func.count(Car.id).label("car_count"))
+            .join(Car, Car.user_id == User.id, isouter=True)
+            .group_by(User.id, User.full_name, User.email)
+            .order_by(func.count(Car.id).desc())
+            .limit(5)
+        )
+        result["top_users"] = [
+            {"name": r[0], "email": r[1], "cars": r[2]}
+            for r in top_result.all()
+        ]
+    except Exception:
+        pass
+
+    return result
+
+
+# ── Users ──────────────────────────────────────────────
 
 @router.get("/users")
 async def list_users(user=Depends(get_current_admin), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(
-        select(User).order_by(User.created_at.desc())
-    )
+    result = await db.execute(select(User).order_by(User.created_at.desc()))
     users = result.scalars().all()
     out = []
     for u in users:
-        sub_result = await db.execute(
-            select(Subscription).where(Subscription.user_id == u.id)
-        )
+        sub_result = await db.execute(select(Subscription).where(Subscription.user_id == u.id))
         sub = sub_result.scalar_one_or_none()
         out.append({
             "id": str(u.id),
@@ -91,7 +124,7 @@ async def list_users(user=Depends(get_current_admin), db: AsyncSession = Depends
             "is_admin": u.is_admin,
             "is_active": u.is_active,
             "created_at": str(u.created_at),
-            "tier": sub.tier if sub else "free",
+            "tier": str(sub.tier.value) if sub and sub.tier else "free",
         })
     return out
 
