@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import type { Car, CarCreate } from '../../types/car.types'
 import Input from '../ui/Input'
 import DropdownSelect from '../ui/DropdownSelect'
+import DatePicker from '../ui/DatePicker'
 import Autocomplete from '../ui/Autocomplete'
 import Button from '../ui/Button'
 import { POPULAR_BRANDS, POPULAR_MODELS } from '../../utils/constants'
@@ -124,15 +125,33 @@ export default function CarForm({ initialData, onSubmit, isLoading }: CarFormPro
           />
           <Input label="Цвет" {...register('color')} placeholder="Белый" />
           <Input label="Пробег (км)" type="number" {...register('mileage', { min: 0 })} />
-          <Input label="Дата покупки" type="date" {...register('purchase_date')} />
+          <Controller
+            name="purchase_date"
+            control={control}
+            render={({ field }) => (
+              <DatePicker label="Дата покупки" value={field.value || ''} onChange={field.onChange} />
+            )}
+          />
         </div>
       </div>
 
       <div className="rounded-2xl border border-surface-200 bg-white p-6 dark:border-surface-700 dark:bg-surface-800">
         <h3 className="mb-4 text-base font-semibold text-surface-900 dark:text-white">Документы</h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Input label="Страховка до" type="date" {...register('insurance_expiry')} />
-          <Input label="Техосмотр до" type="date" {...register('inspection_expiry')} />
+          <Controller
+            name="insurance_expiry"
+            control={control}
+            render={({ field }) => (
+              <DatePicker label="Страховка до" value={field.value || ''} onChange={field.onChange} />
+            )}
+          />
+          <Controller
+            name="inspection_expiry"
+            control={control}
+            render={({ field }) => (
+              <DatePicker label="Техосмотр до" value={field.value || ''} onChange={field.onChange} />
+            )}
+          />
         </div>
       </div>
 

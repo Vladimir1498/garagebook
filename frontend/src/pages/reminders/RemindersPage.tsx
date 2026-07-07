@@ -9,6 +9,7 @@ import Skeleton from '../../components/ui/Skeleton'
 import Modal from '../../components/ui/Modal'
 import Input from '../../components/ui/Input'
 import DropdownSelect from '../../components/ui/DropdownSelect'
+import DatePicker from '../../components/ui/DatePicker'
 import toast from 'react-hot-toast'
 import { clsx } from 'clsx'
 
@@ -132,7 +133,7 @@ function ReminderForm({ cars, onClose }: { cars: any[]; onClose: () => void }) {
       <Input label="Название" value={title} onChange={(e) => setTitle(e.target.value)} required placeholder="Замена масла" />
       <DropdownSelect label="Автомобиль" options={cars.map((c: any) => ({ value: c.id, label: `${c.brand} ${c.model}` }))} value={carId} onChange={setCarId} />
       <DropdownSelect label="Тип" options={[{ value: 'date', label: 'По дате' }, { value: 'mileage', label: 'По пробегу' }]} value={type} onChange={setType} />
-      {type === 'date' && <Input label="Дата" type="date" value={triggerDate} onChange={(e) => setTriggerDate(e.target.value)} required />}
+      {type === 'date' && <DatePicker label="Дата" value={triggerDate} onChange={setTriggerDate} />}
       {type === 'mileage' && <Input label="Пробег (км)" type="number" value={triggerMileage} onChange={(e) => setTriggerMileage(e.target.value)} required />}
       <div className="flex justify-end gap-2 pt-2">
         <Button variant="ghost" type="button" onClick={onClose}>Отмена</Button>

@@ -6,6 +6,7 @@ import { useCars } from '../../hooks/useCars'
 import PageWrapper from '../../components/layout/PageWrapper'
 import Input from '../../components/ui/Input'
 import DropdownSelect from '../../components/ui/DropdownSelect'
+import DatePicker from '../../components/ui/DatePicker'
 import Button from '../../components/ui/Button'
 import toast from 'react-hot-toast'
 
@@ -56,7 +57,7 @@ export default function ExpenseFormPage() {
             <DropdownSelect label="Автомобиль *" options={carOptions} value={carId} onChange={setCarId} disabled={carOptions.length <= 1} />
             <DropdownSelect label="Категория" options={categoryOptions} value={category} onChange={setCategory} />
             <Input label="Сумма (₽) *" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} required />
-            <Input label="Дата *" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+            <DatePicker label="Дата *" value={date} onChange={setDate} />
             <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-surface-700 dark:text-surface-300">Описание</label>
               <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} className="mt-1 w-full rounded-xl border border-surface-200 bg-white px-4 py-3 text-sm outline-none focus:border-primary-500 dark:border-surface-600 dark:bg-surface-800 dark:text-white" />
