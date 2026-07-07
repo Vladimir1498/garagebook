@@ -1,6 +1,5 @@
-import { useState, useRef } from 'react'
-import { Camera, X } from 'lucide-react'
-import { resolveFileUrl } from '../../utils/resolveFileUrl'
+import { useRef } from 'react'
+import { Camera } from 'lucide-react'
 
 interface CarPhotoGalleryProps {
   photoUrl: string | null
@@ -16,20 +15,17 @@ export default function CarPhotoGallery({ photoUrl, onUpload }: CarPhotoGalleryP
     e.target.value = ''
   }
 
-  const resolvedUrl = resolveFileUrl(photoUrl)
-
-  if (resolvedUrl) {
+  // If photo exists, show a compact upload button (hero already displays the image)
+  if (photoUrl) {
     return (
-      <div className="relative overflow-hidden rounded-2xl">
-        <img src={resolvedUrl} alt="Фото автомобиля" className="h-64 w-full object-cover sm:h-80" />
-        <button
-          onClick={() => inputRef.current?.click()}
-          className="absolute bottom-3 right-3 rounded-xl bg-black/50 p-2 text-white backdrop-blur-sm transition-colors hover:bg-black/70"
-        >
-          <Camera className="h-5 w-5" />
-        </button>
+      <button
+        onClick={() => inputRef.current?.click()}
+        className="inline-flex items-center gap-1.5 rounded-lg border border-surface-200 bg-white px-3 py-1.5 text-xs font-medium text-surface-600 transition-colors hover:bg-surface-50 dark:border-surface-600 dark:bg-surface-700 dark:text-surface-300 dark:hover:bg-surface-600"
+      >
+        <Camera className="h-3.5 w-3.5" />
+        Заменить фото
         <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleChange} />
-      </div>
+      </button>
     )
   }
 

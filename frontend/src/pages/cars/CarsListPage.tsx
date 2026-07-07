@@ -73,7 +73,7 @@ export default function CarsListPage() {
           action={!search ? <Button onClick={handleAddCar} iconLeft={<Plus />}>{t('cars.add')}</Button> : undefined}
         />
       ) : (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 page-enter-stagger">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 page-enter-stagger">
           {filtered.map((car) => <CarCard key={car.id} car={car} />)}
         </div>
       )}

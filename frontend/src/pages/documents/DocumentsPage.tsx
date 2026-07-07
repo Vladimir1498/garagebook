@@ -124,7 +124,7 @@ export default function DocumentsPage() {
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 page-enter-stagger">
           {filteredDocuments.map((doc) => (
-            <div key={doc.id} className="card">
+            <div key={doc.id} className="card p-4">
               <div className="flex items-start gap-3">
                 <div className={clsx('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', categoryColors[doc.category] || categoryColors.other)}>
                   <FileText className="h-4 w-4" strokeWidth={1.75} />

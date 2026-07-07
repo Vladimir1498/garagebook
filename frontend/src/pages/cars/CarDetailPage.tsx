@@ -86,6 +86,7 @@ export default function CarDetailPage() {
         )}
 
         <div className="p-5">
+          {/* Upload photo button */}
           <CarPhotoGallery photoUrl={car.photo_url} onUpload={(file) => uploadPhoto.mutate({ id: id!, file })} />
 
           {/* Quick stats */}
