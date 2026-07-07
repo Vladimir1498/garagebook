@@ -22,7 +22,7 @@ export default function CarCard({ car }: { car: Car }) {
   return (
     <div
       onClick={() => navigate(`/cars/${car.id}`)}
-      className="card-interactive overflow-hidden"
+      className="card-interactive p-5 overflow-hidden"
     >
       {/* Photo */}
       <div className="relative -mx-5 -mt-5 aspect-[16/10] overflow-hidden">

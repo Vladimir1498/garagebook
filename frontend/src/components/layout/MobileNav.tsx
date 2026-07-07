@@ -7,11 +7,9 @@ import { clsx } from 'clsx'
 const navItems = [
   { path: '/', icon: LayoutDashboard, label: 'nav.dashboard' },
   { path: '/cars', icon: Car, label: 'nav.cars' },
-  { path: '/expenses', icon: DollarSign, label: 'nav.expenses' },
 ]
 
 const createItems = [
-  { path: '/cars/new', icon: Car, label: 'Автомобиль' },
   { path: '/maintenance/new', icon: Wrench, label: 'Обслуживание' },
   { path: '/expenses/new', icon: DollarSign, label: 'Расход' },
   { path: '/documents', icon: FileText, label: 'Документ' },
@@ -19,6 +17,7 @@ const createItems = [
 
 const moreItems = [
   { path: '/maintenance', icon: Wrench, label: 'nav.maintenance' },
+  { path: '/expenses', icon: DollarSign, label: 'nav.expenses' },
   { path: '/documents', icon: FileText, label: 'nav.documents' },
   { path: '/reminders', icon: Bell, label: 'nav.reminders' },
   { path: '/analytics', icon: BarChart3, label: 'nav.analytics' },
@@ -37,37 +36,58 @@ export default function MobileNav() {
         className="fixed bottom-0 left-0 right-0 z-40 border-t border-surface-100 bg-white/95 backdrop-blur-xl dark:border-surface-700/50 dark:bg-surface-900/95 lg:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
-        <div className="grid grid-cols-5 items-center px-1 pt-1.5 pb-1">
-          {navItems.map(({ path, icon: Icon, label }) => (
-            <NavLink
-              key={path}
-              to={path}
-              end={path === '/'}
-              className={({ isActive }) =>
-                clsx(
-                  'flex flex-col items-center gap-0.5 py-1.5 rounded-lg transition-colors',
-                  isActive ? 'text-primary-500' : 'text-surface-400'
-                )
-              }
-            >
-              <Icon className="h-5 w-5" strokeWidth={2} />
-              <span className="text-[10px] font-medium">{t(label)}</span>
-            </NavLink>
-          ))}
-
-          {/* Center add button */}
-          <button
-            onClick={() => setShowCreate(true)}
-            className="flex items-center justify-center"
+        <div className="grid grid-cols-5 items-end px-1 pt-2 pb-2">
+          {/* Дашборд */}
+          <NavLink
+            to="/"
+            end
+            className={({ isActive }) => clsx(
+              'flex flex-col items-center gap-0.5 py-1',
+              isActive ? 'text-primary-500' : 'text-surface-400'
+            )}
           >
-            <div className="flex h-11 w-11 -mt-3 items-center justify-center rounded-full bg-primary-500 text-white shadow-lg transition-all active:scale-95">
-              <Plus className="h-5 w-5" strokeWidth={2.5} />
-            </div>
-          </button>
+            <LayoutDashboard className="h-5 w-5" strokeWidth={2} />
+            <span className="text-[10px] font-medium">{t('nav.dashboard')}</span>
+          </NavLink>
 
+          {/* Авто */}
+          <NavLink
+            to="/cars"
+            className={({ isActive }) => clsx(
+              'flex flex-col items-center gap-0.5 py-1',
+              isActive ? 'text-primary-500' : 'text-surface-400'
+            )}
+          >
+            <Car className="h-5 w-5" strokeWidth={2} />
+            <span className="text-[10px] font-medium">{t('nav.cars')}</span>
+          </NavLink>
+
+          {/* + кнопка по центру */}
+          <div className="flex justify-center">
+            <button
+              onClick={() => setShowCreate(true)}
+              className="flex h-12 w-12 -mt-5 items-center justify-center rounded-full bg-primary-500 text-white shadow-lg shadow-primary-500/25 transition-all active:scale-95"
+            >
+              <Plus className="h-5 w-5" strokeWidth={2.5} />
+            </button>
+          </div>
+
+          {/* Напоминания */}
+          <NavLink
+            to="/reminders"
+            className={({ isActive }) => clsx(
+              'flex flex-col items-center gap-0.5 py-1',
+              isActive ? 'text-primary-500' : 'text-surface-400'
+            )}
+          >
+            <Bell className="h-5 w-5" strokeWidth={2} />
+            <span className="text-[10px] font-medium">{t('nav.reminders')}</span>
+          </NavLink>
+
+          {/* Ещё */}
           <button
             onClick={() => setShowMore(true)}
-            className="flex flex-col items-center gap-0.5 py-1.5 text-surface-400"
+            className="flex flex-col items-center gap-0.5 py-1 text-surface-400"
           >
             <MoreHorizontal className="h-5 w-5" strokeWidth={2} />
             <span className="text-[10px] font-medium">Ещё</span>
@@ -75,10 +95,10 @@ export default function MobileNav() {
         </div>
       </nav>
 
-      {/* Create bottom sheet */}
+      {/* Создать */}
       {showCreate && (
         <div className="fixed inset-0 z-50 lg:hidden" onClick={() => setShowCreate(false)}>
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm animate-fade-in" />
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
           <div
             className="absolute bottom-0 left-0 right-0 animate-slide-up rounded-t-2xl bg-white shadow-elevated dark:bg-surface-800"
             style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}
@@ -111,10 +131,10 @@ export default function MobileNav() {
         </div>
       )}
 
-      {/* More bottom sheet */}
+      {/* Ещё */}
       {showMore && (
         <div className="fixed inset-0 z-50 lg:hidden" onClick={() => setShowMore(false)}>
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm animate-fade-in" />
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
           <div
             className="absolute bottom-0 left-0 right-0 animate-slide-up rounded-t-2xl bg-white shadow-elevated dark:bg-surface-800"
             style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}
@@ -128,12 +148,10 @@ export default function MobileNav() {
                   key={path}
                   to={path}
                   onClick={() => setShowMore(false)}
-                  className={({ isActive }) =>
-                    clsx(
-                      'flex flex-col items-center gap-1.5 rounded-xl py-3',
-                      isActive ? 'bg-primary-50 text-primary-500 dark:bg-primary-950/30' : 'text-surface-600 dark:text-surface-400'
-                    )
-                  }
+                  className={({ isActive }) => clsx(
+                    'flex flex-col items-center gap-1.5 rounded-xl py-3',
+                    isActive ? 'bg-primary-50 text-primary-500 dark:bg-primary-950/30' : 'text-surface-600 dark:text-surface-400'
+                  )}
                 >
                   <Icon className="h-5 w-5" strokeWidth={1.75} />
                   <span className="text-[10px] font-medium leading-tight text-center">{t(label)}</span>
