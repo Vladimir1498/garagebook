@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Gauge, Fuel, Shield } from 'lucide-react'
+import { Gauge, Fuel, Shield, Calendar } from 'lucide-react'
 import type { Car } from '../../types/car.types'
 import { resolveFileUrl } from '../../utils/resolveFileUrl'
 import { clsx } from 'clsx'
@@ -15,13 +15,17 @@ export default function CarCard({ car }: { car: Car }) {
     ? Math.ceil((new Date(car.insurance_expiry).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
     : null
 
+  const inspectionDays = car.inspection_expiry
+    ? Math.ceil((new Date(car.inspection_expiry).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    : null
+
   return (
     <div
       onClick={() => navigate(`/cars/${car.id}`)}
       className="card-interactive overflow-hidden"
     >
-      {/* Photo — no negative margins, fits inside card naturally */}
-      <div className="relative -mx-5 -mt-5 mb-4 aspect-[16/10] overflow-hidden sm:-mx-5 sm:-mt-5">
+      {/* Photo */}
+      <div className="relative -mx-5 -mt-5 aspect-[16/10] overflow-hidden">
         {resolvedPhotoUrl ? (
           <img
             src={resolvedPhotoUrl}
@@ -41,12 +45,12 @@ export default function CarCard({ car }: { car: Car }) {
       </div>
 
       {/* Info */}
-      <div className="px-5 pb-1">
+      <div className="pt-3.5 pb-1">
         <h3 className="text-[15px] font-semibold tracking-tight text-surface-900 dark:text-white">
           {car.brand} {car.model}
         </h3>
 
-        <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-surface-500 dark:text-surface-400">
+        <div className="mt-2 flex items-center gap-3 text-xs text-surface-500 dark:text-surface-400">
           <span className="flex items-center gap-1 tabular-nums">
             <Gauge className="h-3.5 w-3.5 text-surface-400" strokeWidth={1.5} />
             {car.mileage.toLocaleString('ru')} км
@@ -55,13 +59,25 @@ export default function CarCard({ car }: { car: Car }) {
             <Fuel className="h-3.5 w-3.5 text-surface-400" strokeWidth={1.5} />
             {fuelLabels[car.fuel_type]}
           </span>
+        </div>
+
+        <div className="mt-2.5 flex flex-wrap gap-1.5">
           {insuranceDays !== null && (
             <Badge
               variant={insuranceDays <= 0 ? 'danger' : insuranceDays <= 30 ? 'warning' : 'default'}
               size="sm"
             >
               <Shield className="h-3 w-3" strokeWidth={1.5} />
-              {insuranceDays <= 0 ? 'Истекла' : `${insuranceDays} дн.`}
+              {insuranceDays <= 0 ? 'Страховка истекла' : `Страховка ${insuranceDays} дн.`}
+            </Badge>
+          )}
+          {inspectionDays !== null && (
+            <Badge
+              variant={inspectionDays <= 0 ? 'danger' : inspectionDays <= 30 ? 'warning' : 'default'}
+              size="sm"
+            >
+              <Calendar className="h-3 w-3" strokeWidth={1.5} />
+              {inspectionDays <= 0 ? 'Техосмотр просрочен' : `Техосмотр ${inspectionDays} дн.`}
             </Badge>
           )}
         </div>
