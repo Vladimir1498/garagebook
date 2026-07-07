@@ -5,7 +5,7 @@ import { BarChart3, TrendingUp, DollarSign, Gauge, Lock } from 'lucide-react'
 import { analyticsService } from '../../services/analytics.service'
 import { useCars } from '../../hooks/useCars'
 import PageWrapper from '../../components/layout/PageWrapper'
-import Select from '../../components/ui/Select'
+import Select from '../../components/ui/DropdownSelect'
 import StatCard from '../../components/dashboard/StatCard'
 import ExpenseChart from '../../components/charts/ExpenseChart'
 import Skeleton from '../../components/ui/Skeleton'
@@ -82,8 +82,8 @@ export default function AnalyticsPage() {
   return (
     <PageWrapper title={t('analytics.title')}>
       <div className="mb-6 flex flex-wrap gap-3">
-        <Select options={carOptions} value={selectedCar} onChange={(e) => setSelectedCar(e.target.value)} className="w-48" />
-        <Select options={periodOptions} value={period} onChange={(e) => setPeriod(e.target.value)} className="w-40" />
+        <Select options={carOptions} value={selectedCar} onChange={setSelectedCar} className="w-48" />
+        <Select options={periodOptions} value={period} onChange={setPeriod} className="w-40" />
       </div>
 
       {isLoading ? (
