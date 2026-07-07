@@ -10,6 +10,7 @@ from app.models.reminder import Reminder
 from app.models.notification import Notification, NotificationType
 from app.repositories.reminder_repository import ReminderRepository
 from app.schemas.reminder import ReminderCreate, ReminderResponse
+from app.services.push_service import send_push_to_user
 
 router = APIRouter(prefix="/api/v1/reminders", tags=["reminders"])
 
@@ -71,6 +72,18 @@ async def create_reminder(data: ReminderCreate, user: User = Depends(get_current
     )
     db.add(notification)
     await db.commit()
+
+    # Send push notification
+    try:
+        await send_push_to_user(
+            user_id=user.id,
+            title="Напоминание создано",
+            body=data.title,
+            url="/reminders",
+            db=db,
+        )
+    except Exception:
+        pass  # Push is best-effort
 
     return reminder
 

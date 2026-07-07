@@ -1,11 +1,11 @@
 import json
 import os
 import logging
-import base64
 from pywebpush import webpush, WebPushException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.push_subscription import PushSubscription
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -13,15 +13,14 @@ VAPID_CLAIMS = {"sub": "mailto:admin@garagebook.app"}
 
 
 def get_vapid_keys() -> dict:
-    """Get VAPID keys from environment variables."""
-    private_key = os.environ.get("VAPID_PRIVATE_KEY", "")
-    public_key = os.environ.get("VAPID_PUBLIC_KEY", "")
+    """Get VAPID keys from config (environment variables)."""
+    private_key = settings.VAPID_PRIVATE_KEY
+    public_key = settings.VAPID_PUBLIC_KEY
 
     if private_key and public_key:
         return {"private": private_key, "public": public_key}
 
-    # No keys configured
-    logger.warning("VAPID keys not configured in environment variables")
+    logger.warning("VAPID keys not configured")
     return {"private": "", "public": ""}
 
 

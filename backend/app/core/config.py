@@ -25,6 +25,9 @@ class Settings(BaseSettings):
 
     OPENAI_API_KEY: str = ""
 
+    VAPID_PRIVATE_KEY: str = ""
+    VAPID_PUBLIC_KEY: str = ""
+
     class Config:
         env_file = ".env"
 
