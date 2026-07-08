@@ -67,7 +67,6 @@
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
 
   ::selection {
@@ -203,7 +202,7 @@
   .page-enter-stagger > *:nth-child(6) { animation-delay: 250ms; }
 
   .text-balance {
-    text-wrap: balance;
+    text-wrap: wrap;
   }
 
   .scrollbar-none {

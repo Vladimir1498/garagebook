@@ -7,7 +7,8 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import select
+from sqlalchemy import select, text
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.database import engine, async_session
 from app.models import Base
@@ -25,35 +26,47 @@ async def _check_reminders():
             await asyncio.sleep(3600)  # every hour
             async with async_session() as db:
                 today = date.today()
+
+                # Use raw SQL to avoid enum comparison issues
                 result = await db.execute(
-                    select(Reminder)
-                    .join(Car, Reminder.car_id == Car.id)
-                    .where(
-                        Reminder.is_completed == False,
-                        Reminder.notify_push == True,
-                        Reminder.trigger_date != None,
-                        Reminder.trigger_date <= today,
-                    )
+                    text("""
+                        SELECT r.id, r.title, r.car_id, c.user_id, c.brand, c.model
+                        FROM reminders r
+                        JOIN cars c ON r.car_id = c.id
+                        WHERE r.is_completed = false
+                          AND r.notify_push = true
+                          AND r.trigger_date IS NOT NULL
+                          AND r.trigger_date <= :today
+                    """),
+                    {"today": today}
                 )
-                due_reminders = result.scalars().all()
+                due_reminders = result.fetchall()
 
                 if due_reminders:
                     from app.services.push_service import send_push_to_user
-                    for reminder in due_reminders:
-                        car_result = await db.execute(select(Car).where(Car.id == reminder.car_id))
-                        car = car_result.scalar_one_or_none()
-                        if car:
+                    sent_count = 0
+                    for row in due_reminders:
+                        try:
                             await send_push_to_user(
-                                user_id=car.user_id,
-                                title=reminder.title,
-                                body=f"{car.brand} {car.model} — пора!",
+                                user_id=row.user_id,
+                                title=row.title,
+                                body=f"{row.brand} {row.model} — пора!",
                                 url="/reminders",
                                 db=db,
                             )
-                            # Mark as completed to avoid re-sending
-                            reminder.is_completed = True
+                            # Mark as completed
+                            await db.execute(
+                                text("UPDATE reminders SET is_completed = true WHERE id = :id"),
+                                {"id": row.id}
+                            )
+                            sent_count += 1
+                        except Exception as e:
+                            logger.warning(f"Push failed for reminder {row.id}: {e}")
+
                     await db.commit()
-                    logger.info(f"Push sent for {len(due_reminders)} due reminders")
+                    logger.info(f"Push sent for {sent_count}/{len(due_reminders)} due reminders")
+                else:
+                    logger.debug("No due reminders found")
         except Exception as e:
             logger.error(f"Reminder check failed: {e}")
 
@@ -66,6 +79,7 @@ async def lifespan(app: FastAPI):
 
     # Start background reminder checker
     task = asyncio.create_task(_check_reminders())
+    logger.info("Background reminder checker started")
 
     yield
 
