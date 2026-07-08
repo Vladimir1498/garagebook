@@ -67,7 +67,7 @@ export default function AdminPage() {
   return (
     <PageWrapper title="Админ-панель" subtitle="Управление системой GarageBook">
       {/* Tabs */}
-      <div className="mb-6 flex gap-1 rounded-xl bg-surface-100 p-1 dark:bg-surface-800">
+      <div className="mb-6 flex overflow-x-auto scrollbar-none rounded-xl bg-surface-100 p-1 dark:bg-surface-800">
         {([
           { id: 'stats', label: 'Статистика', icon: BarChart3 },
           { id: 'users', label: 'Пользователи', icon: Users },
@@ -77,7 +77,7 @@ export default function AdminPage() {
             key={id}
             onClick={() => setTab(id)}
             className={clsx(
-              'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all',
+              'flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all',
               tab === id ? 'bg-white text-primary-600 shadow-sm dark:bg-surface-700 dark:text-primary-400' : 'text-surface-500 hover:text-surface-700 dark:text-surface-400'
             )}
           >
@@ -238,82 +238,89 @@ function UserRow({ user: u, onToggleAdmin, onToggleActive, onSetTier, onDelete }
   const [showTierMenu, setShowTierMenu] = useState(false)
 
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-surface-200 bg-white p-4 dark:border-surface-700 dark:bg-surface-800">
-      {/* Avatar */}
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-100 text-sm font-semibold text-primary-600 dark:bg-primary-950/30 dark:text-primary-400">
-        {u.full_name?.charAt(0) || '?'}
-      </div>
-
-      {/* Info */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <p className="truncate text-sm font-medium text-surface-900 dark:text-white">{u.full_name}</p>
-          {u.is_admin && <Shield className="h-3.5 w-3.5 shrink-0 text-primary-500" />}
+    <div className="rounded-xl border border-surface-200 bg-white p-4 dark:border-surface-700 dark:bg-surface-800">
+      <div className="flex items-center gap-3">
+        {/* Avatar */}
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-100 text-sm font-semibold text-primary-600 dark:bg-primary-950/30 dark:text-primary-400">
+          {u.full_name?.charAt(0) || '?'}
         </div>
-        <p className="truncate text-xs text-surface-500">{u.email}</p>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="truncate text-sm font-medium text-surface-900 dark:text-white">{u.full_name}</p>
+            {u.is_admin && <Shield className="h-3.5 w-3.5 shrink-0 text-primary-500" />}
+          </div>
+          <p className="truncate text-xs text-surface-500">{u.email}</p>
+        </div>
+
+        {/* Tier badge — desktop */}
+        <span className={clsx('hidden sm:inline-flex shrink-0 rounded-lg px-2 py-0.5 text-[11px] font-semibold', tierColors[u.tier] || tierColors.free)}>
+          {tierLabels[u.tier] || 'Free'}
+        </span>
       </div>
 
-      {/* Tier badge */}
-      <span className={clsx('shrink-0 rounded-lg px-2 py-0.5 text-[11px] font-semibold', tierColors[u.tier] || tierColors.free)}>
-        {tierLabels[u.tier] || 'Free'}
-      </span>
+      {/* Bottom row: tier (mobile) + actions */}
+      <div className="mt-3 flex items-center justify-between gap-2 border-t border-surface-100 pt-3 dark:border-surface-700 sm:border-0 sm:pt-0 sm:mt-2">
+        {/* Tier badge — mobile */}
+        <span className={clsx('sm:hidden shrink-0 rounded-lg px-2 py-0.5 text-[11px] font-semibold', tierColors[u.tier] || tierColors.free)}>
+          {tierLabels[u.tier] || 'Free'}
+        </span>
 
-      {/* Actions */}
-      <div className="flex shrink-0 items-center gap-1">
-        {/* Tier dropdown */}
-        <div className="relative">
+        {/* Actions */}
+        <div className="flex shrink-0 items-center gap-1">
+          {/* Tier dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setShowTierMenu(!showTierMenu)}
+              className="rounded-lg p-2 text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-700"
+              title="Сменить тариф"
+            >
+              <Crown className="h-4 w-4" />
+            </button>
+            {showTierMenu && (
+              <div className="absolute right-0 top-full z-10 mt-1 w-32 rounded-xl border border-surface-200 bg-white py-1 shadow-lg dark:border-surface-600 dark:bg-surface-800">
+                {['free', 'pro', 'fleet'].map((tier) => (
+                  <button
+                    key={tier}
+                    onClick={() => { onSetTier(tier); setShowTierMenu(false) }}
+                    className={clsx(
+                      'flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium transition-colors hover:bg-surface-50 dark:hover:bg-surface-700',
+                      u.tier === tier ? 'text-primary-600 dark:text-primary-400' : 'text-surface-600 dark:text-surface-300'
+                    )}
+                  >
+                    {u.tier === tier && <CheckCircle className="h-3 w-3" />}
+                    {tierLabels[tier]}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           <button
-            onClick={() => setShowTierMenu(!showTierMenu)}
-            className="rounded-lg p-2 text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-700"
-            title="Сменить тариф"
+            onClick={onToggleAdmin}
+            className={clsx('rounded-lg p-2 transition-colors', u.is_admin ? 'text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-950/30' : 'text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-700')}
+            title={u.is_admin ? 'Снять админа' : 'Сделать админом'}
           >
-            <Crown className="h-4 w-4" />
+            <UserCog className="h-4 w-4" />
           </button>
-          {showTierMenu && (
-            <div className="absolute right-0 top-full z-10 mt-1 w-32 rounded-xl border border-surface-200 bg-white py-1 shadow-lg dark:border-surface-600 dark:bg-surface-800">
-              {['free', 'pro', 'fleet'].map((tier) => (
-                <button
-                  key={tier}
-                  onClick={() => { onSetTier(tier); setShowTierMenu(false) }}
-                  className={clsx(
-                    'flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium transition-colors hover:bg-surface-50 dark:hover:bg-surface-700',
-                    u.tier === tier ? 'text-primary-600 dark:text-primary-400' : 'text-surface-600 dark:text-surface-300'
-                  )}
-                >
-                  {u.tier === tier && <CheckCircle className="h-3 w-3" />}
-                  {tierLabels[tier]}
-                </button>
-              ))}
-            </div>
-          )}
+
+          <button
+            onClick={onToggleActive}
+            className={clsx('rounded-lg p-2 transition-colors', u.is_active ? 'text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30' : 'text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30')}
+            title={u.is_active ? 'Заблокировать' : 'Разблокировать'}
+          >
+            {u.is_active ? <CheckCircle className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
+          </button>
+
+          <button
+            onClick={onDelete}
+            className="rounded-lg p-2 text-surface-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30"
+            title="Удалить"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
         </div>
-
-        {/* Toggle admin */}
-        <button
-          onClick={onToggleAdmin}
-          className={clsx('rounded-lg p-2 transition-colors', u.is_admin ? 'text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-950/30' : 'text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-700')}
-          title={u.is_admin ? 'Снять админа' : 'Сделать админом'}
-        >
-          <UserCog className="h-4 w-4" />
-        </button>
-
-        {/* Toggle active */}
-        <button
-          onClick={onToggleActive}
-          className={clsx('rounded-lg p-2 transition-colors', u.is_active ? 'text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30' : 'text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30')}
-          title={u.is_active ? 'Заблокировать' : 'Разблокировать'}
-        >
-          {u.is_active ? <CheckCircle className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
-        </button>
-
-        {/* Delete */}
-        <button
-          onClick={onDelete}
-          className="rounded-lg p-2 text-surface-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30"
-          title="Удалить"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
       </div>
     </div>
   )
