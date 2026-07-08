@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { Camera, Loader2, Check } from 'lucide-react'
 import Button from '../ui/Button'
 import { aiService } from '../../services/ai.service'
+import { formatMoney } from '../../utils/formatCurrency'
 
 interface ReceiptScannerProps {
   onScan: (data: { date: string | null; amount: number | null; vendor: string | null; items: Array<{ name: string; price: number }> }) => void
@@ -18,7 +19,7 @@ export default function ReceiptScanner({ onScan }: ReceiptScannerProps) {
     setScanning(true)
     try {
       const { data } = await aiService.scanReceipt(file)
-      setResult(`Найдено: ${data.vendor || '—'}, ${data.amount || 0} ₽`)
+      setResult(`Найдено: ${data.vendor || '—'}, ${formatMoney(data.amount || 0)}`)
       onScan(data)
     } catch { setResult('Ошибка распознавания') }
     finally { setScanning(false) }

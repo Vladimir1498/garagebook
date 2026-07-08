@@ -8,7 +8,7 @@ interface TierLockProps {
 }
 
 const tierNames = { pro: 'Pro', fleet: 'Fleet' }
-const tierPrices = { pro: '199 ₽/мес', fleet: '999 ₽/мес' }
+const tierPrices = { pro: '199 Br/мес', fleet: '999 Br/мес' }
 
 export default function TierLock({ tier, feature }: TierLockProps) {
   const navigate = useNavigate()

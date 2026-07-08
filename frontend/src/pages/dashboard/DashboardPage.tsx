@@ -11,6 +11,7 @@ import UpcomingEvents from '../../components/dashboard/UpcomingEvents'
 import Skeleton from '../../components/ui/Skeleton'
 import UpdateBanner from '../../components/pwa/UpdateBanner'
 import { useAuth } from '../../hooks/useAuth'
+import { formatMoney } from '../../utils/formatCurrency'
 
 const serviceTypeLabels: Record<string, string> = {
   oil_change: 'Замена масла', filter: 'Замена фильтра', spark_plugs: 'Свечи',
@@ -94,7 +95,7 @@ export default function DashboardPage() {
       {/* Key Stats */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard title="Автомобилей" value={d?.car_count || 0} icon={<Car className="h-4 w-4" />} />
-        <StatCard title="Расходы / мес" value={`${Number(d?.monthly_expenses || 0).toLocaleString('ru')} ₽`} icon={<DollarSign className="h-4 w-4" />} />
+        <StatCard title="Расходы / мес" value={`${formatMoney(Number(d?.monthly_expenses || 0))}`} icon={<DollarSign className="h-4 w-4" />} />
         <StatCard title="Следующее ТО" value={d?.next_service ? `${d.next_service.mileage.toLocaleString('ru')} км` : '—'} icon={<Wrench className="h-4 w-4" />} />
         <StatCard title="Записей" value={d?.recent_activity?.length || 0} icon={<BarChart3 className="h-4 w-4" />} />
       </div>

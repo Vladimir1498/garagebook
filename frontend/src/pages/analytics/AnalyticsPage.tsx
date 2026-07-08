@@ -11,6 +11,7 @@ import ExpenseChart from '../../components/charts/ExpenseChart'
 import Skeleton from '../../components/ui/Skeleton'
 import Button from '../../components/ui/Button'
 import { useNavigate } from 'react-router-dom'
+import { formatMoney } from '../../utils/formatCurrency'
 
 const categoryLabels: Record<string, string> = {
   fuel: 'Топливо', maintenance: 'ТО', repair: 'Ремонт', insurance: 'Страховка',
@@ -91,10 +92,10 @@ export default function AnalyticsPage() {
       ) : d ? (
         <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard title={t('analytics.total_expenses')} value={`${totalExpenses.toLocaleString('ru')} ₽`} icon={<DollarSign className="h-5 w-5" />} />
-            <StatCard title={t('analytics.avg_service')} value={`${avgService.toLocaleString('ru')} ₽`} icon={<BarChart3 className="h-5 w-5" />} />
-            <StatCard title={t('analytics.cost_per_km')} value={`${costPerKm.toFixed(2)} ₽/км`} icon={<Gauge className="h-5 w-5" />} />
-            <StatCard title={t('analytics.ownership_cost')} value={`${ownershipCost.toLocaleString('ru')} ₽`} icon={<TrendingUp className="h-5 w-5" />} />
+            <StatCard title={t('analytics.total_expenses')} value={`${formatMoney(totalExpenses)}`} icon={<DollarSign className="h-5 w-5" />} />
+            <StatCard title={t('analytics.avg_service')} value={`${formatMoney(avgService)}`} icon={<BarChart3 className="h-5 w-5" />} />
+            <StatCard title={t('analytics.cost_per_km')} value={`${formatMoney(costPerKm)}/км`} icon={<Gauge className="h-5 w-5" />} />
+            <StatCard title={t('analytics.ownership_cost')} value={`${formatMoney(ownershipCost)}`} icon={<TrendingUp className="h-5 w-5" />} />
           </div>
 
           {categoryBreakdown.length > 0 && (
@@ -114,7 +115,7 @@ export default function AnalyticsPage() {
           {d.most_expensive_repair && (
             <div className="mt-6 rounded-2xl border border-surface-200 bg-white p-5 dark:border-surface-700 dark:bg-surface-800">
               <h3 className="mb-2 text-sm font-semibold text-surface-900 dark:text-white">Самая дорогая поломка</h3>
-              <p className="text-sm text-surface-600">{serviceTypeLabels[d.most_expensive_repair.description] || d.most_expensive_repair.description} — <span className="font-semibold">{Number(d.most_expensive_repair.cost).toLocaleString('ru')} ₽</span></p>
+              <p className="text-sm text-surface-600">{serviceTypeLabels[d.most_expensive_repair.description] || d.most_expensive_repair.description} — <span className="font-semibold">{formatMoney(Number(d.most_expensive_repair.cost))}</span></p>
               <p className="text-xs text-surface-400">{new Date(d.most_expensive_repair.date).toLocaleDateString('ru')}</p>
             </div>
           )}

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Fuel, Gauge, Calendar, Wrench } from 'lucide-react'
 import api from '../../services/api'
 import Skeleton from '../../components/ui/Skeleton'
+import { formatMoney } from '../../utils/formatCurrency'
 
 const fuelLabels: Record<string, string> = { petrol: 'Бензин', diesel: 'Дизель', electric: 'Электро', hybrid: 'Гибрид' }
 
@@ -56,7 +57,7 @@ export default function PublicVehiclePage() {
                     <p className="text-sm font-medium text-surface-900 dark:text-white">{h.service_type}</p>
                     <p className="text-xs text-surface-500">{new Date(h.date).toLocaleDateString('ru')} · {h.mileage?.toLocaleString('ru')} км</p>
                   </div>
-                  <p className="text-sm font-semibold text-surface-900 dark:text-white">{h.cost?.toLocaleString('ru')} ₽</p>
+                  <p className="text-sm font-semibold text-surface-900 dark:text-white">{formatMoney(Number(h.cost))}</p>
                 </div>
               ))}
             </div>

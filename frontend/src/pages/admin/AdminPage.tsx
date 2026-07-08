@@ -8,6 +8,7 @@ import Badge from '../../components/ui/Badge'
 import toast from 'react-hot-toast'
 import { useState } from 'react'
 import { clsx } from 'clsx'
+import { formatMoney } from '../../utils/formatCurrency'
 
 const tierLabels: Record<string, string> = { free: 'Free', pro: 'Pro', fleet: 'Fleet' }
 const tierColors: Record<string, string> = {
@@ -102,7 +103,7 @@ export default function AdminPage() {
               <StatCard title="Пользователей" value={s.user_count} icon={<Users className="h-5 w-5" />} />
               <StatCard title="Автомобилей" value={s.car_count} icon={<Car className="h-5 w-5" />} />
               <StatCard title="Записей ТО" value={s.maintenance_count} icon={<Wrench className="h-5 w-5" />} />
-              <StatCard title="Общий оборот" value={`${Number(s.total_revenue).toLocaleString('ru')} ₽`} icon={<DollarSign className="h-5 w-5" />} />
+              <StatCard title="Общий оборот" value={`${formatMoney(Number(s.total_revenue))}`} icon={<DollarSign className="h-5 w-5" />} />
             </div>
 
             {/* Tiers + Registrations */}

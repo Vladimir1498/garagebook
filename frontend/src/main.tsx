@@ -10,6 +10,7 @@ import { ToastProvider } from './contexts/ToastContext'
 import { NotificationProvider } from './contexts/NotificationContext'
 import { CommandPaletteProvider } from './contexts/CommandPaletteContext'
 import { OfflineProvider } from './contexts/OfflineContext'
+import { CurrencyProvider } from './contexts/CurrencyContext'
 import './i18n'
 import './index.css'
 
@@ -71,8 +72,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
                 <NotificationProvider>
                   <CommandPaletteProvider>
                     <OfflineProvider>
-                      <App />
-                      <Toaster
+                      <CurrencyProvider>
+                        <App />
+                        <Toaster
                       position="top-right"
                       toastOptions={{
                         duration: 4000,
@@ -93,6 +95,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
                         },
                       }}
                     />
+                      </CurrencyProvider>
                     </OfflineProvider>
                   </CommandPaletteProvider>
                 </NotificationProvider>

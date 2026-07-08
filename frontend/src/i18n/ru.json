@@ -143,6 +143,7 @@
     "title": "Настройки",
     "theme": "Тема",
     "language": "Язык",
+    "currency": "Валюта",
     "notifications": "Уведомления",
     "export": "Экспорт данных",
     "delete_account": "Удалить аккаунт",

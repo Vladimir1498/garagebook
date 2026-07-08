@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { CommandPaletteContext } from '../../contexts/CommandPaletteContext'
 import { useAuth } from '../../hooks/useAuth'
 import api from '../../services/api'
+import { formatMoney } from '../../utils/formatCurrency'
 
 const navCommands = [
   { id: 'dashboard', label: 'nav.dashboard', icon: BarChart3, path: '/' },
@@ -96,7 +97,7 @@ export default function CommandPalette() {
               id: `maint-${m.id}`,
               type: 'maintenance',
               title: parts.join(' · '),
-              subtitle: `${m.date} — ${m.cost} ₽`,
+              subtitle: `${m.date} — ${formatMoney(Number(m.cost))}`,
               path: `/maintenance/${m.id}/edit`,
             })
           })
@@ -108,7 +109,7 @@ export default function CommandPalette() {
               id: `exp-${e.id}`,
               type: 'expense',
               title: `${e.category_label || e.category}`,
-              subtitle: e.description || `${e.date} — ${e.amount} ₽`,
+              subtitle: e.description || `${e.date} — ${formatMoney(Number(e.amount))}`,
               path: `/expenses`,
             })
           })

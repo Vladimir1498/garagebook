@@ -10,6 +10,7 @@ import Skeleton from '../../components/ui/Skeleton'
 import toast from 'react-hot-toast'
 import { ArrowLeft, Calendar, Edit, Fuel, Gauge, Shield, Trash2, Wrench, FileText, DollarSign, Plus } from 'lucide-react'
 import { resolveFileUrl } from '../../utils/resolveFileUrl'
+import { formatMoney } from '../../utils/formatCurrency'
 import Tabs from '../../components/ui/Tabs'
 import EmptyState from '../../components/ui/EmptyState'
 import { useRemindersList } from '../../hooks/useReminders'
@@ -192,7 +193,7 @@ function CarExpensesTab({ carId }: { carId: string }) {
             <p className="truncate text-sm font-medium text-surface-800 dark:text-surface-100">{e.description || e.category}</p>
             <p className="text-xs text-surface-400">{e.category} · {new Date(e.date).toLocaleDateString('ru')}</p>
           </div>
-          <p className="shrink-0 text-sm font-semibold tabular-nums text-surface-800 dark:text-white">{e.amount.toLocaleString('ru')} ₽</p>
+          <p className="shrink-0 text-sm font-semibold tabular-nums text-surface-800 dark:text-white">{formatMoney(e.amount)}</p>
         </div>
       ))}
     </div>
@@ -244,7 +245,7 @@ function CarMaintenanceTab({ carId }: { carId: string }) {
             <p className="truncate text-sm font-medium text-surface-800 dark:text-surface-100">{r.service_type}</p>
             <p className="text-xs text-surface-400">{new Date(r.date).toLocaleDateString('ru')} · {r.mileage?.toLocaleString('ru')} км</p>
           </div>
-          {r.cost > 0 && <p className="shrink-0 text-sm font-semibold tabular-nums text-surface-800 dark:text-white">{r.cost.toLocaleString('ru')} ₽</p>}
+          {r.cost > 0 && <p className="shrink-0 text-sm font-semibold tabular-nums text-surface-800 dark:text-white">{formatMoney(r.cost)}</p>}
         </div>
       ))}
     </div>

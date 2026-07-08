@@ -10,6 +10,7 @@ import Badge from '../../components/ui/Badge'
 import ExpenseChart from '../../components/charts/ExpenseChart'
 import toast from 'react-hot-toast'
 import { clsx } from 'clsx'
+import { formatMoney } from '../../utils/formatCurrency'
 
 const categoryLabels: Record<string, string> = {
   fuel: 'Топливо', maintenance: 'ТО', repair: 'Ремонт', insurance: 'Страховка',
@@ -51,7 +52,7 @@ export default function ExpensesPage() {
         <div className="min-w-0">
           <h1 className="text-xl font-bold tracking-tight text-surface-900 dark:text-white sm:text-2xl">{t('expenses.title')}</h1>
           <p className="mt-0.5 text-sm text-surface-500 dark:text-surface-400">
-            Всего: <span className="font-semibold text-surface-700 dark:text-surface-200 tabular-nums">{totalExpenses.toLocaleString('ru')} ₽</span>
+            Всего: <span className="font-semibold text-surface-700 dark:text-surface-200 tabular-nums">{formatMoney(totalExpenses)}</span>
           </p>
         </div>
         <div className="flex gap-2">
@@ -84,7 +85,7 @@ export default function ExpensesPage() {
                 <p className="truncate text-sm font-medium text-surface-800 dark:text-surface-100">{categoryLabels[e.category]}</p>
                 <p className="text-xs text-surface-400">{e.description || new Date(e.date).toLocaleDateString('ru', { day: 'numeric', month: 'short' })}</p>
               </div>
-              <p className="shrink-0 text-sm font-semibold tabular-nums text-surface-800 dark:text-white">{Number(e.amount).toLocaleString('ru')} ₽</p>
+              <p className="shrink-0 text-sm font-semibold tabular-nums text-surface-800 dark:text-white">{formatMoney(Number(e.amount))}</p>
               <button onClick={() => { if (confirm('Удалить расход?')) deleteExpense.mutate(e.id, { onSuccess: () => toast.success('Расход удалён') }) }} className="shrink-0 rounded-lg p-1.5 text-surface-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30"><Trash2 className="h-3.5 w-3.5" /></button>
             </div>
           ))}

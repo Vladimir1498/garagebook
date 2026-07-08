@@ -9,6 +9,7 @@ import DropdownSelect from '../../components/ui/DropdownSelect'
 import DatePicker from '../../components/ui/DatePicker'
 import Button from '../../components/ui/Button'
 import toast from 'react-hot-toast'
+import { getCurrencySymbol } from '../../utils/formatCurrency'
 
 const categoryOptions = [
   { value: 'fuel', label: 'Топливо' }, { value: 'maintenance', label: 'ТО' },
@@ -56,7 +57,7 @@ export default function ExpenseFormPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <DropdownSelect label="Автомобиль *" options={carOptions} value={carId} onChange={setCarId} disabled={carOptions.length <= 1} />
             <DropdownSelect label="Категория" options={categoryOptions} value={category} onChange={setCategory} />
-            <Input label="Сумма (₽) *" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+            <Input label={`Сумма (${getCurrencySymbol()}) *`} type="number" value={amount} onChange={(e) => setAmount(e.target.value)} required />
             <DatePicker label="Дата *" value={date} onChange={setDate} />
             <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-surface-700 dark:text-surface-300">Описание</label>

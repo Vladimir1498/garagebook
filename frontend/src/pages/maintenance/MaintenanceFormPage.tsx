@@ -10,6 +10,7 @@ import DatePicker from '../../components/ui/DatePicker'
 import Button from '../../components/ui/Button'
 import Skeleton from '../../components/ui/Skeleton'
 import toast from 'react-hot-toast'
+import { getCurrencySymbol } from '../../utils/formatCurrency'
 
 const typeOptions = [
   { value: 'oil_change', label: 'Замена масла' },
@@ -118,7 +119,7 @@ export default function MaintenanceFormPage() {
             {serviceType === 'custom' && <Input label="Тип (свой)" value={customType} onChange={(e) => setCustomType(e.target.value)} placeholder="Название работ" />}
             <DatePicker label="Дата *" value={date} onChange={setDate} />
             <Input label="Пробег (км) *" type="number" value={mileage} onChange={(e) => setMileage(e.target.value)} required placeholder="50000" />
-            <Input label="Стоимость (₽) *" type="number" value={cost} onChange={(e) => setCost(e.target.value)} required placeholder="5000" />
+            <Input label={`Стоимость (${getCurrencySymbol()}) *`} type="number" value={cost} onChange={(e) => setCost(e.target.value)} required placeholder="5000" />
             <Input label="Сервисный центр" value={serviceCenter} onChange={(e) => setServiceCenter(e.target.value)} placeholder="Название сервиса" />
             <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-surface-700 dark:text-surface-300">Описание</label>

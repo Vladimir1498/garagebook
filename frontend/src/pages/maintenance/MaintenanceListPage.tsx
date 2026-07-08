@@ -9,6 +9,7 @@ import EmptyState from '../../components/ui/EmptyState'
 import Skeleton from '../../components/ui/Skeleton'
 import toast from 'react-hot-toast'
 import { clsx } from 'clsx'
+import { formatMoney } from '../../utils/formatCurrency'
 
 const typeLabels: Record<string, string> = {
   oil_change: 'Замена масла', filter: 'Замена фильтра', spark_plugs: 'Свечи',
@@ -81,7 +82,7 @@ export default function MaintenanceListPage() {
               </div>
               <div className="flex items-center gap-3">
                 <div className="text-right">
-                  <p className="text-sm font-semibold tabular-nums text-surface-800 dark:text-white">{Number(r.cost).toLocaleString('ru')} ₽</p>
+                  <p className="text-sm font-semibold tabular-nums text-surface-800 dark:text-white">{formatMoney(Number(r.cost))}</p>
                   <p className="text-[10px] text-surface-400">{r.mileage.toLocaleString('ru')} км</p>
                 </div>
                 <div className="flex gap-0.5">

@@ -1,8 +1,9 @@
 import { useContext, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Sun, Moon, Monitor, Globe, Download, Trash2, Bell, FileText } from 'lucide-react'
+import { Sun, Moon, Monitor, Globe, Download, Trash2, Bell, FileText, Coins } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { ThemeContext } from '../../contexts/ThemeContext'
+import { useCurrency, CURRENCIES } from '../../contexts/CurrencyContext'
 import Button from '../../components/ui/Button'
 import DropdownSelect from '../../components/ui/DropdownSelect'
 import Modal from '../../components/ui/Modal'
@@ -15,6 +16,7 @@ export default function SettingsPage() {
   const { t, i18n } = useTranslation()
   useAuth()
   const { theme, setTheme } = useContext(ThemeContext)
+  const { currency, setCurrency } = useCurrency()
   const [showDelete, setShowDelete] = useState(false)
   const [deleteEmail, setDeleteEmail] = useState('')
   const [exporting, setExporting] = useState(false)
@@ -86,6 +88,18 @@ export default function SettingsPage() {
               options={[{ value: 'ru', label: 'Русский' }, { value: 'en', label: 'English' }]}
               value={i18n.language}
               onChange={(v) => { i18n.changeLanguage(v); localStorage.setItem('language', v) }}
+              className="w-36"
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Coins className="h-4 w-4 text-surface-400" />
+              <span className="text-sm font-medium text-surface-800 dark:text-surface-200">{t('settings.currency')}</span>
+            </div>
+            <DropdownSelect
+              options={CURRENCIES.map((c) => ({ value: c.code, label: `${c.symbol} ${c.code}` }))}
+              value={currency.code}
+              onChange={setCurrency}
               className="w-36"
             />
           </div>

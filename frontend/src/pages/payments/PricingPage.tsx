@@ -37,7 +37,7 @@ export default function PricingPage() {
           <PricingCard
             name="Про"
             price="199"
-            period={`₽${t('pricing.month')}`}
+            period={`Br${t('pricing.month')}`}
             features={['Безлимит авто', 'Полная аналитика', 'Экспорт PDF', 'Приоритетная поддержка', 'OCR чеков']}
             isCurrent={sub?.tier === 'pro'}
             isPopular
@@ -46,7 +46,7 @@ export default function PricingPage() {
           <PricingCard
             name="Флит"
             price="999"
-            period={`₽${t('pricing.month')}`}
+            period={`Br${t('pricing.month')}`}
             features={['Всё из "Про"', 'Флит-режим', 'API доступ', 'Совместный доступ', 'Fleet аналитика']}
             isCurrent={sub?.tier === 'fleet'}
             onSelect={() => handleSelect('fleet')}

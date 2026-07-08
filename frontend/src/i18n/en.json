@@ -143,6 +143,7 @@
     "title": "Settings",
     "theme": "Theme",
     "language": "Language",
+    "currency": "Currency",
     "notifications": "Notifications",
     "export": "Export Data",
     "delete_account": "Delete Account",

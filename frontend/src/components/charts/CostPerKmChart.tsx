@@ -1,4 +1,5 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { formatMoney } from '../../utils/formatCurrency'
 
 interface CostPerKmChartProps {
   data: Array<{ month: string; cost_per_km: number }>
@@ -15,7 +16,7 @@ export default function CostPerKmChart({ data }: CostPerKmChartProps) {
         <YAxis tick={{ fontSize: 12 }} />
         <Tooltip
           contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
-          formatter={(value: number) => [`${value.toFixed(2)} ₽/км`, 'Стоимость за км']}
+          formatter={(value: number) => [`${formatMoney(value)}/км`, 'Стоимость за км']}
         />
         <Line type="monotone" dataKey="cost_per_km" stroke="#10B981" strokeWidth={2} dot={{ r: 4 }} />
       </LineChart>
