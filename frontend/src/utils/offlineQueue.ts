@@ -1,6 +1,7 @@
 const DB_NAME = 'garagebook-offline'
-const DB_VERSION = 1
+const DB_VERSION = 2
 const QUEUE_STORE = 'pending-actions'
+const CACHE_STORE = 'get-cache'
 
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -9,6 +10,9 @@ function openDB(): Promise<IDBDatabase> {
       const db = request.result
       if (!db.objectStoreNames.contains(QUEUE_STORE)) {
         db.createObjectStore(QUEUE_STORE, { keyPath: 'id', autoIncrement: true })
+      }
+      if (!db.objectStoreNames.contains(CACHE_STORE)) {
+        db.createObjectStore(CACHE_STORE, { keyPath: 'key' })
       }
     }
     request.onsuccess = () => resolve(request.result)
@@ -25,6 +29,8 @@ export interface PendingAction {
   synced: boolean
 }
 
+// ── Queue (mutations) ─────────────────────────────────
+
 export async function queueAction(url: string, method: string, body: any): Promise<void> {
   const db = await openDB()
   const tx = db.transaction(QUEUE_STORE, 'readwrite')
@@ -38,7 +44,6 @@ export async function queueAction(url: string, method: string, body: any): Promi
     tx.onerror = () => reject(tx.error)
   })
 
-  // Register background sync
   if ('serviceWorker' in navigator && 'SyncManager' in window) {
     const reg = await navigator.serviceWorker.ready
     await (reg as any).sync.register('sync-pending')
@@ -128,4 +133,39 @@ export async function syncPendingActions(): Promise<{ synced: number; failed: nu
 export async function getPendingCount(): Promise<number> {
   const actions = await getPendingActions()
   return actions.length
+}
+
+// ── Cache (GET responses) ─────────────────────────────
+
+export async function cacheResponse(key: string, data: any, ttlMs = 30 * 60 * 1000) {
+  try {
+    const db = await openDB()
+    const tx = db.transaction(CACHE_STORE, 'readwrite')
+    tx.objectStore(CACHE_STORE).put({ key, data, expiresAt: Date.now() + ttlMs })
+    await new Promise<void>((resolve, reject) => {
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => reject(tx.error)
+    })
+  } catch {}
+}
+
+export async function getCachedResponse(key: string): Promise<any | null> {
+  try {
+    const db = await openDB()
+    const tx = db.transaction(CACHE_STORE, 'readonly')
+    const req = tx.objectStore(CACHE_STORE).get(key)
+    return new Promise((resolve) => {
+      req.onsuccess = () => {
+        const entry = req.result
+        if (!entry || Date.now() > entry.expiresAt) {
+          resolve(null)
+        } else {
+          resolve(entry.data)
+        }
+      }
+      req.onerror = () => resolve(null)
+    })
+  } catch {
+    return null
+  }
 }
