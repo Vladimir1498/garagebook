@@ -4,19 +4,19 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
   build: {
-    target: 'es2020',
-    cssTarget: 'safari14',
+    target: 'es2015',
+    cssTarget: 'safari13',
   },
   plugins: [
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'icons/*.png', 'offline.html'],
+      includeAssets: ['favicon.svg'],
       manifest: {
         name: 'GarageBook — Цифровой гараж',
         short_name: 'GarageBook',
         description: 'Цифровой помощник автовладельца',
-        theme_color: '#3B82F6',
+        theme_color: '#2563EB',
         background_color: '#FAFBFC',
         display: 'standalone',
         orientation: 'portrait',
@@ -46,18 +46,10 @@ export default defineConfig({
           },
           {
             urlPattern: /^https?:\/\/.*\/uploads\//i,
-            handler: 'CacheFirst',
+            handler: 'NetworkFirst',
             options: {
               cacheName: 'uploads-cache',
               expiration: { maxEntries: 100, maxAgeSeconds: 604800 },
-            }
-          },
-          {
-            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'images-cache',
-              expiration: { maxEntries: 100, maxAgeSeconds: 2592000 },
             }
           },
           {
