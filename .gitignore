@@ -5,6 +5,7 @@ dist/
 __pycache__/
 uploads/
 .vite/
+*.tsbuildinfo
 README.md
 promo/
 website/
