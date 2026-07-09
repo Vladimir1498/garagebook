@@ -21,6 +21,13 @@ function detectPlatform(): 'ios' | 'android' | 'desktop' {
   return 'desktop'
 }
 
+function isStandalonePwa(): boolean {
+  return Boolean(
+    window.matchMedia?.('(display-mode: standalone)').matches ||
+    (window.navigator as Navigator & { standalone?: boolean }).standalone
+  )
+}
+
 // Promise with timeout
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return Promise.race([
@@ -39,10 +46,18 @@ export function usePushNotifications() {
 
   useEffect(() => {
     mountedRef.current = true
-    const supported = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window
+    const supported = typeof window !== 'undefined' && 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window
     setIsSupported(supported)
-    setPermission(Notification.permission)
     setPlatform(detectPlatform())
+
+    if (supported && typeof Notification !== 'undefined') {
+      try {
+        setPermission(Notification.permission)
+      } catch (error) {
+        console.warn('Notification permission unavailable:', error)
+        setPermission('default')
+      }
+    }
 
     if (supported) {
       navigator.serviceWorker.ready.then((reg) => {
@@ -61,6 +76,11 @@ export function usePushNotifications() {
     setLoading(true)
 
     try {
+      const currentPlatform = detectPlatform()
+      if (currentPlatform === 'ios' && !isStandalonePwa()) {
+        throw new Error('На iPhone push-уведомления работают только из приложения, добавленного на экран Домой. Откройте сайт в Safari и выберите «Добавить на экран Домой».')
+      }
+
       // Step 1: Permission with timeout
       const result = await withTimeout(Notification.requestPermission(), 10000)
       if (!mountedRef.current) return
@@ -135,13 +155,17 @@ export function usePushNotifications() {
       // Step 5: Send to backend
       const subJson = subscription.toJSON()
       const token = localStorage.getItem('access_token')
+      if (!token) {
+        throw new Error('Нужно войти в аккаунт, чтобы сохранить подписку на уведомления')
+      }
+
       try {
-        await withTimeout(
+        const response = await withTimeout(
           fetch(`${API_URL}/api/v1/push/subscribe`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+              Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({
               endpoint: subJson.endpoint,
@@ -151,8 +175,17 @@ export function usePushNotifications() {
           }),
           10000
         )
-      } catch {
-        // Subscription saved locally even if backend fails
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => null)
+          const message = errorData?.detail || errorData?.error || 'Сервер отклонил подписку'
+          throw new Error(message)
+        }
+      } catch (e: any) {
+        if (mountedRef.current) {
+          setIsSubscribed(false)
+        }
+        throw e
       }
 
       if (mountedRef.current) {

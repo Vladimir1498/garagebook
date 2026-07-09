@@ -24,6 +24,14 @@ window.addEventListener('unhandledrejection', (e) => {
   e.preventDefault()
 })
 
+if (typeof window.matchMedia === 'function') {
+  try {
+    window.matchMedia('(display-mode: standalone)')
+  } catch (error) {
+    console.warn('matchMedia unavailable:', error)
+  }
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

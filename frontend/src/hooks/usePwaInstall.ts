@@ -56,9 +56,12 @@ export function usePwaInstall() {
   useEffect(() => {
     setPlatform(getPlatform())
 
-    debugPWA().then(setIssues)
+    debugPWA()
+      .then(setIssues)
+      .catch(() => setIssues(['Не удалось проверить PWA-статус']))
 
-    if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) {
+    const isStandalone = typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(display-mode: standalone)').matches
+    if (isStandalone || (window.navigator as any).standalone) {
       setIsInstalled(true)
       return
     }
