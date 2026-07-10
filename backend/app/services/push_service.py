@@ -25,13 +25,13 @@ def get_vapid_keys() -> dict:
 
 
 def _get_vapid_private_key():
-    """Get the raw PEM private key bytes for pywebpush."""
+    """Get the raw PEM private key for pywebpush."""
     keys = get_vapid_keys()
     if not keys["private"]:
         raise ValueError("VAPID_PRIVATE_KEY not configured")
     # Fix escaped newlines from Railway env vars (\n → actual newlines)
-    pem_str = keys["private"].replace("\\n", "\n")
-    return pem_str.encode() if isinstance(pem_str, str) else pem_str
+    # pywebpush expects a string, it calls .encode() internally
+    return keys["private"].replace("\\n", "\n")
 
 
 async def save_subscription(user_id, endpoint: str, p256dh: str, auth: str, user_agent: str | None, db: AsyncSession):
