@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { useNavigate, NavLink } from 'react-router-dom'
 import { LayoutDashboard, Car, Plus, MoreHorizontal, Wrench, DollarSign, FileText, Bell, BarChart3, Settings, Users } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -24,11 +24,50 @@ const moreItems = [
   { path: '/settings', icon: Settings, label: 'nav.settings' },
 ]
 
+function useSwipeToDismiss(onClose: () => void) {
+  const sheetRef = useRef<HTMLDivElement>(null)
+  const startY = useRef(0)
+  const currentY = useRef(0)
+  const isDragging = useRef(false)
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    startY.current = e.touches[0].clientY
+    isDragging.current = true
+    if (sheetRef.current) sheetRef.current.style.transition = 'none'
+  }, [])
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!isDragging.current) return
+    currentY.current = e.touches[0].clientY - startY.current
+    if (currentY.current > 0 && sheetRef.current) {
+      sheetRef.current.style.transform = `translateY(${currentY.current}px)`
+    }
+  }, [])
+
+  const handleTouchEnd = useCallback(() => {
+    isDragging.current = false
+    if (sheetRef.current) {
+      sheetRef.current.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)'
+      if (currentY.current > 80) {
+        onClose()
+      } else {
+        sheetRef.current.style.transform = 'translateY(0)'
+      }
+      currentY.current = 0
+    }
+  }, [onClose])
+
+  return { sheetRef, handleTouchStart, handleTouchMove, handleTouchEnd }
+}
+
 export default function MobileNav() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [showMore, setShowMore] = useState(false)
   const [showCreate, setShowCreate] = useState(false)
+
+  const createSwipe = useSwipeToDismiss(() => setShowCreate(false))
+  const moreSwipe = useSwipeToDismiss(() => setShowMore(false))
 
   return (
     <>
@@ -95,15 +134,22 @@ export default function MobileNav() {
         </div>
       </nav>
 
-      {/* Создать */}
+      {/* Создать — swipe to dismiss + Отмена */}
       {showCreate && (
         <div className="fixed inset-0 z-50 lg:hidden" onClick={() => setShowCreate(false)}>
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
           <div
-            className="absolute bottom-0 left-0 right-0 animate-slide-up rounded-t-2xl bg-white shadow-elevated dark:bg-surface-800"
+            ref={createSwipe.sheetRef}
+            onClick={(e) => e.stopPropagation()}
+            className="absolute bottom-0 left-0 right-0 rounded-t-2xl bg-white shadow-elevated dark:bg-surface-800"
             style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}
           >
-            <div className="flex justify-center pt-3 pb-1">
+            <div
+              onTouchStart={createSwipe.handleTouchStart}
+              onTouchMove={createSwipe.handleTouchMove}
+              onTouchEnd={createSwipe.handleTouchEnd}
+              className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing"
+            >
               <div className="h-1 w-10 rounded-full bg-surface-300 dark:bg-surface-600" />
             </div>
             <p className="px-5 pb-2 text-xs font-medium text-surface-400">Создать</p>
@@ -131,15 +177,22 @@ export default function MobileNav() {
         </div>
       )}
 
-      {/* Ещё */}
+      {/* Ещё — swipe to dismiss */}
       {showMore && (
         <div className="fixed inset-0 z-50 lg:hidden" onClick={() => setShowMore(false)}>
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
           <div
-            className="absolute bottom-0 left-0 right-0 animate-slide-up rounded-t-2xl bg-white shadow-elevated dark:bg-surface-800"
+            ref={moreSwipe.sheetRef}
+            onClick={(e) => e.stopPropagation()}
+            className="absolute bottom-0 left-0 right-0 rounded-t-2xl bg-white shadow-elevated dark:bg-surface-800"
             style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}
           >
-            <div className="flex justify-center pt-3 pb-2">
+            <div
+              onTouchStart={moreSwipe.handleTouchStart}
+              onTouchMove={moreSwipe.handleTouchMove}
+              onTouchEnd={moreSwipe.handleTouchEnd}
+              className="flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing"
+            >
               <div className="h-1 w-10 rounded-full bg-surface-300 dark:bg-surface-600" />
             </div>
             <div className="grid grid-cols-3 gap-1 px-4 pb-2">
