@@ -4,11 +4,6 @@ import { LayoutDashboard, Car, Plus, MoreHorizontal, Wrench, DollarSign, FileTex
 import { useTranslation } from 'react-i18next'
 import { clsx } from 'clsx'
 
-const navItems = [
-  { path: '/', icon: LayoutDashboard, label: 'nav.dashboard' },
-  { path: '/cars', icon: Car, label: 'nav.cars' },
-]
-
 const createItems = [
   { path: '/maintenance/new', icon: Wrench, label: 'Обслуживание' },
   { path: '/expenses/new', icon: DollarSign, label: 'Расход' },
@@ -49,14 +44,16 @@ function useSwipeToDismiss(onClose: () => void) {
   const handleTouchEnd = useCallback(() => {
     isDragging.current = false
     if (!sheetRef.current) return
-    const currentTransform = sheetRef.current.style.transform
-    const match = currentTransform.match(/translateY\((\d+)px\)/)
-    const currentY = match ? parseInt(match[1]) : 0
+
+    // Parse current Y from transform matrix
+    const style = window.getComputedStyle(sheetRef.current)
+    const matrix = new DOMMatrixReadOnly(style.transform)
+    const currentY = matrix.m42
 
     sheetRef.current.style.willChange = 'auto'
     sheetRef.current.style.transition = 'transform 0.35s cubic-bezier(0.32, 0.72, 0, 1)'
 
-    if (currentY > 80) {
+    if (currentY > 60) {
       sheetRef.current.style.transform = 'translateY(100%)'
       sheetRef.current.addEventListener('transitionend', () => onClose(), { once: true })
     } else {
@@ -83,7 +80,6 @@ export default function MobileNav() {
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         <div className="grid grid-cols-5 items-end px-1 pt-2 pb-2">
-          {/* Дашборд */}
           <NavLink
             to="/"
             end
@@ -96,7 +92,6 @@ export default function MobileNav() {
             <span className="text-[10px] font-medium">{t('nav.dashboard')}</span>
           </NavLink>
 
-          {/* Авто */}
           <NavLink
             to="/cars"
             className={({ isActive }) => clsx(
@@ -108,7 +103,6 @@ export default function MobileNav() {
             <span className="text-[10px] font-medium">{t('nav.cars')}</span>
           </NavLink>
 
-          {/* + кнопка по центру */}
           <div className="flex justify-center">
             <button
               onClick={() => setShowCreate(true)}
@@ -118,7 +112,6 @@ export default function MobileNav() {
             </button>
           </div>
 
-          {/* Напоминания */}
           <NavLink
             to="/reminders"
             className={({ isActive }) => clsx(
@@ -130,7 +123,6 @@ export default function MobileNav() {
             <span className="text-[10px] font-medium">{t('nav.reminders')}</span>
           </NavLink>
 
-          {/* Ещё */}
           <button
             onClick={() => setShowMore(true)}
             className="flex flex-col items-center gap-0.5 py-1 text-surface-400"
@@ -141,7 +133,7 @@ export default function MobileNav() {
         </div>
       </nav>
 
-      {/* Создать — swipe to dismiss + Отмена */}
+      {/* Создать */}
       {showCreate && (
         <div className="fixed inset-0 z-50 lg:hidden" onClick={() => setShowCreate(false)}>
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
@@ -149,7 +141,7 @@ export default function MobileNav() {
             ref={createSwipe.sheetRef}
             onClick={(e) => e.stopPropagation()}
             className="absolute bottom-0 left-0 right-0 rounded-t-2xl bg-white shadow-elevated dark:bg-surface-800"
-            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)', overscrollBehavior: 'contain', touchAction: 'pan-x' }}
+            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}
           >
             <div
               onTouchStart={createSwipe.handleTouchStart}
@@ -185,7 +177,7 @@ export default function MobileNav() {
         </div>
       )}
 
-      {/* Ещё — swipe to dismiss */}
+      {/* Ещё */}
       {showMore && (
         <div className="fixed inset-0 z-50 lg:hidden" onClick={() => setShowMore(false)}>
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
@@ -193,7 +185,7 @@ export default function MobileNav() {
             ref={moreSwipe.sheetRef}
             onClick={(e) => e.stopPropagation()}
             className="absolute bottom-0 left-0 right-0 rounded-t-2xl bg-white shadow-elevated dark:bg-surface-800"
-            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)', overscrollBehavior: 'contain', touchAction: 'pan-x' }}
+            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}
           >
             <div
               onTouchStart={moreSwipe.handleTouchStart}
@@ -220,6 +212,12 @@ export default function MobileNav() {
                 </NavLink>
               ))}
             </div>
+            <button
+              onClick={() => setShowMore(false)}
+              className="w-full border-t border-surface-100 py-3 text-sm font-medium text-surface-500 dark:border-surface-700"
+            >
+              Отмена
+            </button>
           </div>
         </div>
       )}
