@@ -29,9 +29,18 @@ def _get_vapid_private_key():
     keys = get_vapid_keys()
     if not keys["private"]:
         raise ValueError("VAPID_PRIVATE_KEY not configured")
-    # Fix escaped newlines from Railway env vars (\n → actual newlines)
-    # pywebpush expects a string, it calls .encode() internally
-    return keys["private"].replace("\\n", "\n")
+
+    pem = keys["private"].replace("\\n", "\n").strip()
+
+    # Debug: log what we actually received
+    logger.error(f"VAPID_KEY_RAW length={len(keys['private'])}, first80={repr(keys['private'][:80])}")
+    logger.error(f"VAPID_KEY_PROCESSED length={len(pem)}, first80={repr(pem[:80])}")
+
+    # Validate PEM format
+    if not pem.startswith("-----BEGIN"):
+        raise ValueError(f"Key does not start with BEGIN. Got: {repr(pem[:100])}")
+
+    return pem
 
 
 async def save_subscription(user_id, endpoint: str, p256dh: str, auth: str, user_agent: str | None, db: AsyncSession):
