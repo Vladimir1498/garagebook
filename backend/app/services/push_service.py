@@ -31,7 +31,9 @@ def _get_vapid_private_key():
         raise ValueError("VAPID_PRIVATE_KEY not configured")
     from cryptography.hazmat.primitives.serialization import load_pem_private_key
     from cryptography.hazmat.backends import default_backend
-    pem = keys["private"].encode() if isinstance(keys["private"], str) else keys["private"]
+    # Fix escaped newlines from Railway env vars (\n → actual newlines)
+    pem_str = keys["private"].replace("\\n", "\n")
+    pem = pem_str.encode() if isinstance(pem_str, str) else pem_str
     return load_pem_private_key(pem, password=None, backend=default_backend())
 
 
