@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { useNavigate, NavLink } from 'react-router-dom'
 import { LayoutDashboard, Car, Plus, MoreHorizontal, Wrench, DollarSign, FileText, Bell, BarChart3, Settings, Users } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -42,7 +42,6 @@ function useSwipeToDismiss(onClose: () => void) {
     if (!isDragging.current || !sheetRef.current) return
     const delta = e.touches[0].clientY - startY.current
     if (delta > 0) {
-      e.preventDefault()
       sheetRef.current.style.transform = `translateY(${delta}px)`
     }
   }, [])
@@ -76,17 +75,6 @@ export default function MobileNav() {
 
   const createSwipe = useSwipeToDismiss(() => setShowCreate(false))
   const moreSwipe = useSwipeToDismiss(() => setShowMore(false))
-
-  // Prevent pull-to-refresh when sheet is open
-  useEffect(() => {
-    if (!showCreate && !showMore) return
-    const prevent = (e: TouchEvent) => {
-      if (e.touches.length > 1) return
-      e.preventDefault()
-    }
-    document.addEventListener('touchmove', prevent, { passive: false })
-    return () => document.removeEventListener('touchmove', prevent)
-  }, [showCreate, showMore])
 
   return (
     <>
@@ -161,7 +149,7 @@ export default function MobileNav() {
             ref={createSwipe.sheetRef}
             onClick={(e) => e.stopPropagation()}
             className="absolute bottom-0 left-0 right-0 rounded-t-2xl bg-white shadow-elevated dark:bg-surface-800"
-            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)', overscrollBehavior: 'contain' }}
+            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)', overscrollBehavior: 'contain', touchAction: 'pan-x' }}
           >
             <div
               onTouchStart={createSwipe.handleTouchStart}
@@ -205,7 +193,7 @@ export default function MobileNav() {
             ref={moreSwipe.sheetRef}
             onClick={(e) => e.stopPropagation()}
             className="absolute bottom-0 left-0 right-0 rounded-t-2xl bg-white shadow-elevated dark:bg-surface-800"
-            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)', overscrollBehavior: 'contain' }}
+            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)', overscrollBehavior: 'contain', touchAction: 'pan-x' }}
           >
             <div
               onTouchStart={moreSwipe.handleTouchStart}
