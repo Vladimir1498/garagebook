@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { useNavigate, NavLink } from 'react-router-dom'
 import { LayoutDashboard, Car, Plus, MoreHorizontal, Wrench, DollarSign, FileText, Bell, BarChart3, Settings, Users } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -27,33 +27,41 @@ const moreItems = [
 function useSwipeToDismiss(onClose: () => void) {
   const sheetRef = useRef<HTMLDivElement>(null)
   const startY = useRef(0)
-  const currentY = useRef(0)
   const isDragging = useRef(false)
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     startY.current = e.touches[0].clientY
     isDragging.current = true
-    if (sheetRef.current) sheetRef.current.style.transition = 'none'
+    if (sheetRef.current) {
+      sheetRef.current.style.transition = 'none'
+      sheetRef.current.style.willChange = 'transform'
+    }
   }, [])
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!isDragging.current) return
-    currentY.current = e.touches[0].clientY - startY.current
-    if (currentY.current > 0 && sheetRef.current) {
-      sheetRef.current.style.transform = `translateY(${currentY.current}px)`
+    if (!isDragging.current || !sheetRef.current) return
+    const delta = e.touches[0].clientY - startY.current
+    if (delta > 0) {
+      e.preventDefault()
+      sheetRef.current.style.transform = `translateY(${delta}px)`
     }
   }, [])
 
   const handleTouchEnd = useCallback(() => {
     isDragging.current = false
-    if (sheetRef.current) {
-      sheetRef.current.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)'
-      if (currentY.current > 80) {
-        onClose()
-      } else {
-        sheetRef.current.style.transform = 'translateY(0)'
-      }
-      currentY.current = 0
+    if (!sheetRef.current) return
+    const currentTransform = sheetRef.current.style.transform
+    const match = currentTransform.match(/translateY\((\d+)px\)/)
+    const currentY = match ? parseInt(match[1]) : 0
+
+    sheetRef.current.style.willChange = 'auto'
+    sheetRef.current.style.transition = 'transform 0.35s cubic-bezier(0.32, 0.72, 0, 1)'
+
+    if (currentY > 80) {
+      sheetRef.current.style.transform = 'translateY(100%)'
+      sheetRef.current.addEventListener('transitionend', () => onClose(), { once: true })
+    } else {
+      sheetRef.current.style.transform = 'translateY(0)'
     }
   }, [onClose])
 
@@ -68,6 +76,17 @@ export default function MobileNav() {
 
   const createSwipe = useSwipeToDismiss(() => setShowCreate(false))
   const moreSwipe = useSwipeToDismiss(() => setShowMore(false))
+
+  // Prevent pull-to-refresh when sheet is open
+  useEffect(() => {
+    if (!showCreate && !showMore) return
+    const prevent = (e: TouchEvent) => {
+      if (e.touches.length > 1) return
+      e.preventDefault()
+    }
+    document.addEventListener('touchmove', prevent, { passive: false })
+    return () => document.removeEventListener('touchmove', prevent)
+  }, [showCreate, showMore])
 
   return (
     <>
@@ -142,13 +161,14 @@ export default function MobileNav() {
             ref={createSwipe.sheetRef}
             onClick={(e) => e.stopPropagation()}
             className="absolute bottom-0 left-0 right-0 rounded-t-2xl bg-white shadow-elevated dark:bg-surface-800"
-            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}
+            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)', overscrollBehavior: 'contain' }}
           >
             <div
               onTouchStart={createSwipe.handleTouchStart}
               onTouchMove={createSwipe.handleTouchMove}
               onTouchEnd={createSwipe.handleTouchEnd}
               className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing"
+              style={{ touchAction: 'none' }}
             >
               <div className="h-1 w-10 rounded-full bg-surface-300 dark:bg-surface-600" />
             </div>
@@ -185,13 +205,14 @@ export default function MobileNav() {
             ref={moreSwipe.sheetRef}
             onClick={(e) => e.stopPropagation()}
             className="absolute bottom-0 left-0 right-0 rounded-t-2xl bg-white shadow-elevated dark:bg-surface-800"
-            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}
+            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)', overscrollBehavior: 'contain' }}
           >
             <div
               onTouchStart={moreSwipe.handleTouchStart}
               onTouchMove={moreSwipe.handleTouchMove}
               onTouchEnd={moreSwipe.handleTouchEnd}
               className="flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing"
+              style={{ touchAction: 'none' }}
             >
               <div className="h-1 w-10 rounded-full bg-surface-300 dark:bg-surface-600" />
             </div>
