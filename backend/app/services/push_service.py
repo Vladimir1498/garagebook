@@ -1,5 +1,6 @@
 import json
 import os
+import tempfile
 import logging
 from pywebpush import webpush, WebPushException
 from sqlalchemy import select
@@ -24,23 +25,22 @@ def get_vapid_keys() -> dict:
     return {"private": "", "public": ""}
 
 
-def _get_vapid_private_key():
-    """Get the raw PEM private key for pywebpush."""
+def _get_vapid_private_key_file():
+    """Write VAPID key to temp file and return path. pywebpush 2.0.0 has a bug with from_string()."""
     keys = get_vapid_keys()
     if not keys["private"]:
         raise ValueError("VAPID_PRIVATE_KEY not configured")
 
     pem = keys["private"].replace("\\n", "\n").strip()
 
-    # Debug: log what we actually received
-    logger.error(f"VAPID_KEY_RAW length={len(keys['private'])}, first80={repr(keys['private'][:80])}")
-    logger.error(f"VAPID_KEY_PROCESSED length={len(pem)}, first80={repr(pem[:80])}")
-
-    # Validate PEM format
     if not pem.startswith("-----BEGIN"):
-        raise ValueError(f"Key does not start with BEGIN. Got: {repr(pem[:100])}")
+        raise ValueError(f"Invalid PEM key format. Starts with: {repr(pem[:50])}")
 
-    return pem
+    # Write to temp file — pywebpush reads from file path reliably
+    tmp = tempfile.NamedTemporaryFile(mode='w', suffix='.pem', delete=False)
+    tmp.write(pem)
+    tmp.close()
+    return tmp.name
 
 
 async def save_subscription(user_id, endpoint: str, p256dh: str, auth: str, user_agent: str | None, db: AsyncSession):
@@ -86,21 +86,28 @@ async def send_push_to_user(user_id, title: str, body: str, url: str | None, db:
         "icon": "/icons/icon-192.png",
     })
 
-    vapid_private_key = _get_vapid_private_key()
+    vapid_key_path = _get_vapid_private_key_file()
 
-    for sub in subscriptions:
+    try:
+        for sub in subscriptions:
+            try:
+                webpush(
+                    subscription_info={
+                        "endpoint": sub.endpoint,
+                        "keys": {"p256dh": sub.p256dh, "auth": sub.auth},
+                    },
+                    data=payload,
+                    vapid_private_key=vapid_key_path,
+                    vapid_claims=VAPID_CLAIMS,
+                )
+            except WebPushException as e:
+                logger.warning(f"Push failed for {sub.endpoint}: {e}")
+                if "410" in str(e) or "404" in str(e):
+                    await db.delete(sub)
+    finally:
+        # Clean up temp file
         try:
-            webpush(
-                subscription_info={
-                    "endpoint": sub.endpoint,
-                    "keys": {"p256dh": sub.p256dh, "auth": sub.auth},
-                },
-                data=payload,
-                vapid_private_key=vapid_private_key,
-                vapid_claims=VAPID_CLAIMS,
-            )
-        except WebPushException as e:
-            logger.warning(f"Push failed for {sub.endpoint}: {e}")
-            if "410" in str(e) or "404" in str(e):
-                await db.delete(sub)
+            os.unlink(vapid_key_path)
+        except OSError:
+            pass
     await db.commit()
