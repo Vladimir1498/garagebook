@@ -102,8 +102,9 @@ async def send_push_to_user(user_id, title: str, body: str, url: str | None, db:
                 )
             except WebPushException as e:
                 logger.warning(f"Push failed for {sub.endpoint}: {e}")
-                # Delete invalid/expired subscriptions
-                if "410" in str(e) or "404" in str(e) or "400" in str(e):
+                # Delete invalid/expired subscriptions on any push error
+                err_str = str(e)
+                if any(code in err_str for code in ["410", "404", "400", "401", "403"]):
                     await db.delete(sub)
     finally:
         # Clean up temp file
