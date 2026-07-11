@@ -114,7 +114,7 @@ export default function MaintenanceFormPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="rounded-2xl border border-surface-200 bg-white p-6 dark:border-surface-700 dark:bg-surface-800">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <DropdownSelect label="Автомобиль" options={carOptions} value={effectiveCarId} onChange={() => {}} disabled />
+            <DropdownSelect label="Автомобиль" options={carOptions} value={effectiveCarId} onChange={setCarId} />
             <DropdownSelect label="Тип работ" options={typeOptions} value={serviceType} onChange={setServiceType} />
             {serviceType === 'custom' && <Input label="Тип (свой)" value={customType} onChange={(e) => setCustomType(e.target.value)} placeholder="Название работ" />}
             <DatePicker label="Дата *" value={date} onChange={setDate} />
