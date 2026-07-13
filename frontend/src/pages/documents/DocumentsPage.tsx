@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { FileText, Trash2, Eye, Upload, FileImage, File } from 'lucide-react'
 import { useDocumentsList, useUploadDocument, useDeleteDocument } from '../../hooks/useDocuments'
 import { useCars } from '../../hooks/useCars'
+import { useSubscription } from '../../hooks/useSubscription'
 import Button from '../../components/ui/Button'
 import EmptyState from '../../components/ui/EmptyState'
 import Skeleton from '../../components/ui/Skeleton'
@@ -30,10 +31,12 @@ const categoryColors: Record<string, string> = {
 export default function DocumentsPage() {
   const { t } = useTranslation()
   const { data: carsData } = useCars()
+  const { data: subData } = useSubscription()
   const uploadDocument = useUploadDocument()
   const deleteDocument = useDeleteDocument()
 
   const cars = carsData?.data?.data || []
+  const tier = subData?.data?.tier || 'free'
   const [selectedCar, setSelectedCar] = useState(cars[0]?.id || '')
   const [showTierModal, setShowTierModal] = useState(false)
   const [filterCategory, setFilterCategory] = useState('all')
@@ -49,10 +52,15 @@ export default function DocumentsPage() {
   }, [documents, filterCategory])
 
   const MAX_DOCS_FREE = 5
+  // Count only non-receipt documents for the limit check
+  const countedDocs = documents.filter((d) => d.category !== 'receipt').length
 
   const handleUpload = async (files: File[]) => {
     if (!selectedCar) { toast.error('Выберите автомобиль'); return }
-    if (documents.length + files.length > MAX_DOCS_FREE) { setShowTierModal(true); return }
+    // Only check limit for non-receipt files on free tier
+    if (tier === 'free' && uploadCategory !== 'receipt' && countedDocs + files.length > MAX_DOCS_FREE) {
+      setShowTierModal(true); return
+    }
     for (const file of files) {
       try {
         await uploadDocument.mutateAsync({ carId: selectedCar, file, category: uploadCategory, name: file.name })
