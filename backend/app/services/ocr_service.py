@@ -11,6 +11,23 @@ GROQ_API = "https://api.groq.com/openai/v1/chat/completions"
 GROQ_MODELS = ["llama-3.2-11b-vision", "meta-llama/llama-4-scout-17b-16e-instruct"]
 
 
+def _normalize_date(date_str: str) -> str:
+    """Convert DD.MM.YYYY or DD/MM/YYYY to YYYY-MM-DD."""
+    if not date_str:
+        return date_str
+    # Try DD.MM.YYYY
+    match = re.match(r'(\d{1,2})[./](\d{1,2})[./](\d{2,4})', date_str)
+    if match:
+        d, m, y = match.groups()
+        if len(y) == 2:
+            y = '20' + y
+        return f"{y}-{int(m):02d}-{int(d):02d}"
+    # Already YYYY-MM-DD?
+    if re.match(r'\d{4}-\d{2}-\d{2}', date_str):
+        return date_str
+    return date_str
+
+
 async def scan_receipt(image_bytes: bytes, content_type: str = "image/jpeg") -> dict:
     """
     Scan a receipt image using Groq Vision (primary) or Tesseract (fallback).
@@ -89,7 +106,11 @@ async def _scan_with_groq(image_bytes: bytes, content_type: str) -> dict:
                     import json
                     json_match = re.search(r'\{[^}]+\}', content, re.DOTALL)
                     if json_match:
-                        return json.loads(json_match.group())
+                        result = json.loads(json_match.group())
+                        # Normalize date to YYYY-MM-DD
+                        if result.get("date"):
+                            result["date"] = _normalize_date(result["date"])
+                        return result
                     return {"amount": None, "date": None, "vendor": None, "category": None, "raw_text": content}
 
                 last_error = f"{model}: {resp.status_code} {resp.text[:200]}"
@@ -133,7 +154,7 @@ async def _scan_with_tesseract(image_bytes: bytes) -> dict:
     dates = re.findall(r'(\d{2}[./\-]\d{2}[./\-]\d{2,4})', text)
     date = dates[0] if dates else None
     if date:
-        date = date.replace('/', '.').replace('-', '.')
+        date = _normalize_date(date)
 
     # Guess category from keywords
     category = "other"
