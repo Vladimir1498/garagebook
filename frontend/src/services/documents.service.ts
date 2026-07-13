@@ -3,8 +3,10 @@ import type { Document, DocumentCreate } from '../types/document.types'
 import type { PaginatedResponse } from '../types/common.types'
 
 export const documentsService = {
-  list: (params?: Record<string, string | number>) =>
-    api.get<PaginatedResponse<Document>>('/api/v1/documents', { params }),
+  list: (carId?: string) =>
+    api.get<PaginatedResponse<Document>>('/api/v1/documents', {
+      params: carId ? { car_id: carId } : {},
+    }),
   get: (id: string) => api.get<Document>(`/api/v1/documents/${id}`),
   create: (data: DocumentCreate) => api.post<Document>('/api/v1/documents', data),
   upload: (carId: string, file: File, category: string, name: string) => {

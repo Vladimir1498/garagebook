@@ -40,7 +40,7 @@ export default function DocumentsPage() {
   const [uploadCategory, setUploadCategory] = useState('other')
 
   // Fetch documents filtered by selected car
-  const { data, isLoading } = useDocumentsList(selectedCar ? { car_id: selectedCar } : undefined)
+  const { data, isLoading } = useDocumentsList(selectedCar || undefined)
   const documents = data?.data?.data || []
 
   const filteredDocuments = useMemo(() => {

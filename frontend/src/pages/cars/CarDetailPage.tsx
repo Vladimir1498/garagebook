@@ -258,7 +258,7 @@ function CarMaintenanceTab({ carId }: { carId: string }) {
 }
 
 function CarDocumentsTab({ carId }: { carId: string }) {
-  const { data, isLoading } = useDocumentsList({ car_id: carId })
+  const { data, isLoading } = useDocumentsList(carId)
   const documents = data?.data?.data || []
 
   if (isLoading) return <Skeleton className="h-32" />

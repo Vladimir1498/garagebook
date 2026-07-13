@@ -1,8 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { documentsService } from '../services/documents.service'
 
-export function useDocumentsList(params?: Record<string, string | number>) {
-  return useQuery({ queryKey: ['documents', params], queryFn: () => documentsService.list(params) })
+export function useDocumentsList(carId?: string) {
+  return useQuery({
+    queryKey: ['documents', carId || 'all'],
+    queryFn: () => documentsService.list(carId || undefined),
+  })
 }
 
 export function useUploadDocument() {
