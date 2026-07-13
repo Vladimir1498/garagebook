@@ -41,7 +41,22 @@ async def _scan_with_groq(image_bytes: bytes, content_type: str) -> dict:
     if not api_key:
         raise ValueError("GROQ_API_KEY not configured")
 
+    # Resize image if too large (Groq limit ~4MB)
+    if len(image_bytes) > 3 * 1024 * 1024:
+        try:
+            from PIL import Image
+            import io
+            img = Image.open(io.BytesIO(image_bytes))
+            img.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
+            buf = io.BytesIO()
+            img.save(buf, format='JPEG', quality=80)
+            image_bytes = buf.getvalue()
+            content_type = 'image/jpeg'
+        except Exception:
+            pass  # Use original if resize fails
+
     b64 = base64.b64encode(image_bytes).decode()
+    logger.info(f"Groq OCR: image size={len(image_bytes)} bytes, content_type={content_type}")
 
     async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.post(
@@ -79,8 +94,31 @@ async def _scan_with_groq(image_bytes: bytes, content_type: str) -> dict:
         )
 
         if resp.status_code != 200:
-            logger.error(f"Groq API error {resp.status_code}: {resp.text[:500]}")
-            raise ValueError(f"Groq API error: {resp.status_code}")
+            error_body = resp.text[:500]
+            logger.error(f"Groq API error {resp.status_code}: {error_body}")
+
+            # Try alternative model if first fails
+            if resp.status_code == 400 and "model" in error_body.lower():
+                logger.info("Trying alternative model: llama-3.2-90b-vision-preview")
+                resp = await client.post(
+                    GROQ_API,
+                    headers={
+                        "Authorization": f"Bearer {api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "model": "llama-3.2-90b-vision-preview",
+                        "messages": [{"role": "user", "content": [
+                            {"type": "text", "text": "Analyze this receipt. Return JSON: {\"amount\": number, \"date\": \"DD.MM.YYYY\", \"vendor\": \"string\", \"category\": \"string\"}"},
+                            {"type": "image_url", "image_url": {"url": f"data:{content_type};base64,{b64}"}},
+                        ]}],
+                        "max_tokens": 300,
+                    },
+                )
+                if resp.status_code != 200:
+                    raise ValueError(f"Groq API error: {resp.status_code} - {resp.text[:200]}")
+            else:
+                raise ValueError(f"Groq API error: {resp.status_code}")
 
         content = resp.json()["choices"][0]["message"]["content"]
 
