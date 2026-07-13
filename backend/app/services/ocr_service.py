@@ -8,6 +8,7 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 GROQ_API = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_MODELS = ["llama-3.2-11b-vision", "meta-llama/llama-4-scout-17b-16e-instruct"]
 
 
 async def scan_receipt(image_bytes: bytes, content_type: str = "image/jpeg") -> dict:
@@ -36,12 +37,12 @@ async def scan_receipt(image_bytes: bytes, content_type: str = "image/jpeg") -> 
 
 
 async def _scan_with_groq(image_bytes: bytes, content_type: str) -> dict:
-    """Use Groq LLaMA Vision to scan receipt."""
+    """Use Groq Vision to scan receipt. Tries models in order."""
     api_key = settings.GROQ_API_KEY
     if not api_key:
         raise ValueError("GROQ_API_KEY not configured")
 
-    # Resize image if too large (Groq limit ~4MB)
+    # Resize image if too large
     if len(image_bytes) > 3 * 1024 * 1024:
         try:
             from PIL import Image
@@ -53,80 +54,51 @@ async def _scan_with_groq(image_bytes: bytes, content_type: str) -> dict:
             image_bytes = buf.getvalue()
             content_type = 'image/jpeg'
         except Exception:
-            pass  # Use original if resize fails
+            pass
 
     b64 = base64.b64encode(image_bytes).decode()
-    logger.info(f"Groq OCR: image size={len(image_bytes)} bytes, content_type={content_type}")
+    logger.info(f"Groq OCR: image={len(image_bytes)}b, type={content_type}")
 
-    async with httpx.AsyncClient(timeout=30) as client:
-        resp = await client.post(
-            GROQ_API,
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "model": "llama-3.2-11b-vision-preview",
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": (
-                                    "Analyze this receipt image. "
-                                    "Return ONLY valid JSON, no markdown:\n"
-                                    '{"amount": number, "date": "DD.MM.YYYY", '
-                                    '"vendor": "store_name", "category": "one_of: fuel/maintenance/repair/insurance/parking/fine/wash/tires/other"}\n'
-                                    "If you cannot recognize a field, set it to null."
-                                ),
-                            },
-                            {
-                                "type": "image_url",
-                                "image_url": {"url": f"data:{content_type};base64,{b64}"},
-                            },
-                        ],
-                    }
-                ],
-                "max_tokens": 300,
-                "temperature": 0.1,
-            },
-        )
+    prompt = (
+        "Analyze this receipt. Return ONLY valid JSON, no markdown:\n"
+        '{"amount": number, "date": "DD.MM.YYYY", '
+        '"vendor": "store_name", "category": "one_of: fuel/maintenance/repair/insurance/parking/fine/wash/tires/other"}\n'
+        "If you cannot recognize a field, set it to null."
+    )
 
-        if resp.status_code != 200:
-            error_body = resp.text[:500]
-            logger.error(f"Groq API error {resp.status_code}: {error_body}")
-
-            # Try alternative model if first fails
-            if resp.status_code == 400 and "model" in error_body.lower():
-                logger.info("Trying alternative model: llama-3.2-90b-vision-preview")
+    last_error = None
+    for model in GROQ_MODELS:
+        try:
+            async with httpx.AsyncClient(timeout=30) as client:
                 resp = await client.post(
                     GROQ_API,
-                    headers={
-                        "Authorization": f"Bearer {api_key}",
-                        "Content-Type": "application/json",
-                    },
+                    headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
                     json={
-                        "model": "llama-3.2-90b-vision-preview",
+                        "model": model,
                         "messages": [{"role": "user", "content": [
-                            {"type": "text", "text": "Analyze this receipt. Return JSON: {\"amount\": number, \"date\": \"DD.MM.YYYY\", \"vendor\": \"string\", \"category\": \"string\"}"},
+                            {"type": "text", "text": prompt},
                             {"type": "image_url", "image_url": {"url": f"data:{content_type};base64,{b64}"}},
                         ]}],
                         "max_tokens": 300,
+                        "temperature": 0.1,
                     },
                 )
-                if resp.status_code != 200:
-                    raise ValueError(f"Groq API error: {resp.status_code} - {resp.text[:200]}")
-            else:
-                raise ValueError(f"Groq API error: {resp.status_code}")
 
-        content = resp.json()["choices"][0]["message"]["content"]
+                if resp.status_code == 200:
+                    content = resp.json()["choices"][0]["message"]["content"]
+                    import json
+                    json_match = re.search(r'\{[^}]+\}', content, re.DOTALL)
+                    if json_match:
+                        return json.loads(json_match.group())
+                    return {"amount": None, "date": None, "vendor": None, "category": None, "raw_text": content}
 
-        import json
-        json_match = re.search(r'\{[^}]+\}', content, re.DOTALL)
-        if json_match:
-            return json.loads(json_match.group())
-        return {"amount": None, "date": None, "vendor": None, "category": None, "raw_text": content}
+                last_error = f"{model}: {resp.status_code} {resp.text[:200]}"
+                logger.warning(f"Groq {model} failed: {resp.status_code}")
+        except Exception as e:
+            last_error = f"{model}: {e}"
+            logger.warning(f"Groq {model} error: {e}")
+
+    raise ValueError(f"All Groq models failed: {last_error}")
 
 
 async def _scan_with_tesseract(image_bytes: bytes) -> dict:
@@ -185,30 +157,30 @@ async def _scan_with_tesseract(image_bytes: bytes) -> dict:
 
 async def scan_vin(image_bytes: bytes) -> dict:
     """Scan VIN number from image using Groq or Tesseract."""
-    # Try Groq first
-    try:
-        api_key = settings.GROQ_API_KEY
-        if api_key:
-            b64 = base64.b64encode(image_bytes).decode()
-            async with httpx.AsyncClient(timeout=30) as client:
-                resp = await client.post(
-                    GROQ_API,
-                    headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-                    json={
-                        "model": "llama-3.2-11b-vision-preview",
-                        "messages": [{"role": "user", "content": [
-                            {"type": "text", "text": "Найди VIN номер на фото. Верни ТОЛЬКО 17-символьный VIN без лишнего текста."},
-                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}},
-                        ]}],
-                        "max_tokens": 50,
-                    },
-                )
-                resp.raise_for_status()
-                vin = resp.json()["choices"][0]["message"]["content"].strip()[:17]
-                if len(vin) == 17:
-                    return {"vin": vin, "source": "groq"}
-    except Exception as e:
-        logger.warning(f"Groq VIN scan failed: {e}")
+    api_key = settings.GROQ_API_KEY
+    if api_key:
+        b64 = base64.b64encode(image_bytes).decode()
+        for model in GROQ_MODELS:
+            try:
+                async with httpx.AsyncClient(timeout=30) as client:
+                    resp = await client.post(
+                        GROQ_API,
+                        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                        json={
+                            "model": model,
+                            "messages": [{"role": "user", "content": [
+                                {"type": "text", "text": "Find the VIN number in this image. Return ONLY the 17-character VIN, nothing else."},
+                                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}},
+                            ]}],
+                            "max_tokens": 50,
+                        },
+                    )
+                    if resp.status_code == 200:
+                        vin = resp.json()["choices"][0]["message"]["content"].strip()[:17]
+                        if len(vin) == 17:
+                            return {"vin": vin, "source": "groq"}
+            except Exception as e:
+                logger.warning(f"Groq VIN scan failed ({model}): {e}")
 
     # Fallback Tesseract
     try:
