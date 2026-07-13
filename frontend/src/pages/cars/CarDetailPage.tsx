@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useCar, useDeleteCar, useUploadCarPhoto } from '../../hooks/useCars'
+import { useDocumentsList } from '../../hooks/useDocuments'
 import PageWrapper from '../../components/layout/PageWrapper'
 import CarPhotoGallery from '../../components/cars/CarPhotoGallery'
 import Button from '../../components/ui/Button'
@@ -8,7 +9,7 @@ import Badge from '../../components/ui/Badge'
 import Modal from '../../components/ui/Modal'
 import Skeleton from '../../components/ui/Skeleton'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Calendar, Edit, Fuel, Gauge, Shield, Trash2, Wrench, FileText, DollarSign, Plus } from 'lucide-react'
+import { ArrowLeft, Calendar, Edit, Fuel, Gauge, Shield, Trash2, Wrench, FileText, DollarSign, Plus, Eye } from 'lucide-react'
 import { resolveFileUrl } from '../../utils/resolveFileUrl'
 import { formatMoney } from '../../utils/formatCurrency'
 import Tabs from '../../components/ui/Tabs'
@@ -145,6 +146,10 @@ export default function CarDetailPage() {
         {activeTab === 'maintenance' && (
           <CarMaintenanceTab carId={id!} />
         )}
+
+        {activeTab === 'documents' && (
+          <CarDocumentsTab carId={id!} />
+        )}
       </div>
 
       {/* Actions */}
@@ -248,6 +253,55 @@ function CarMaintenanceTab({ carId }: { carId: string }) {
           {r.cost > 0 && <p className="shrink-0 text-sm font-semibold tabular-nums text-surface-800 dark:text-white">{formatMoney(r.cost)}</p>}
         </div>
       ))}
+    </div>
+  )
+}
+
+function CarDocumentsTab({ carId }: { carId: string }) {
+  const { data, isLoading } = useDocumentsList({ car_id: carId })
+  const documents = data?.data?.data || []
+
+  if (isLoading) return <Skeleton className="h-32" />
+
+  if (!documents.length) {
+    return <EmptyState icon={<FileText className="h-7 w-7" />} title="Нет документов" description="Загрузите документы для этого автомобиля" action={<Button onClick={() => window.location.href = '/documents'} iconLeft={<Plus />}>Добавить</Button>} />
+  }
+
+  return (
+    <div className="space-y-2">
+      {documents.map((doc) => {
+        const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(doc.name)
+        const isPdf = /\.pdf$/i.test(doc.name)
+        const fileUrl = resolveFileUrl(doc.file_url)
+        return (
+          <div key={doc.id} className="card flex items-center gap-3 p-3">
+            {isImage && fileUrl && (
+              <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-surface-100 dark:bg-surface-700">
+                <img src={fileUrl} alt={doc.name} className="h-full w-full object-cover" loading="lazy" />
+              </div>
+            )}
+            {isPdf && (
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-50 dark:bg-red-950/20">
+                <FileText className="h-5 w-5 text-red-400" />
+              </div>
+            )}
+            {!isImage && !isPdf && (
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-surface-100 dark:bg-surface-700">
+                <FileText className="h-5 w-5 text-surface-400" />
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-surface-800 dark:text-surface-100">{doc.name}</p>
+              <Badge size="sm">{doc.category}</Badge>
+            </div>
+            {fileUrl && (
+              <a href={fileUrl} target="_blank" rel="noopener" className="shrink-0 rounded-lg p-2 text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors">
+                <Eye className="h-4 w-4" />
+              </a>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
