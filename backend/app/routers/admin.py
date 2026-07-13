@@ -1,3 +1,4 @@
+from uuid import UUID
 from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select, func
