@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FileText, Trash2, Eye, Upload } from 'lucide-react'
+import { FileText, Trash2, Eye, Upload, FileImage, File } from 'lucide-react'
 import { useDocumentsList, useUploadDocument, useDeleteDocument } from '../../hooks/useDocuments'
 import { useCars } from '../../hooks/useCars'
 import Button from '../../components/ui/Button'
@@ -123,30 +123,52 @@ export default function DocumentsPage() {
         <EmptyState icon={<FileText className="h-7 w-7" />} title={filterCategory === 'all' ? 'Нет документов' : 'Нет документов в этой категории'} description="Загрузите первый документ" />
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 page-enter-stagger">
-          {filteredDocuments.map((doc) => (
-            <div key={doc.id} className="card p-4">
-              <div className="flex items-start gap-3">
-                <div className={clsx('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', categoryColors[doc.category] || categoryColors.other)}>
-                  <FileText className="h-4 w-4" strokeWidth={1.75} />
+          {filteredDocuments.map((doc) => {
+            const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(doc.name)
+            const isPdf = /\.pdf$/i.test(doc.name)
+            const fileUrl = resolveFileUrl(doc.file_url)
+            return (
+              <div key={doc.id} className="card overflow-hidden p-4">
+                {/* Preview */}
+                {isImage && fileUrl && (
+                  <div className="mb-3 -mx-4 -mt-4 aspect-video overflow-hidden bg-surface-100 dark:bg-surface-700">
+                    <img src={fileUrl} alt={doc.name} className="h-full w-full object-cover" loading="lazy" />
+                  </div>
+                )}
+                {isPdf && (
+                  <div className="mb-3 flex h-20 items-center justify-center rounded-lg bg-red-50 dark:bg-red-950/20">
+                    <FileText className="h-8 w-8 text-red-400" />
+                  </div>
+                )}
+                {!isImage && !isPdf && (
+                  <div className="mb-3 flex h-20 items-center justify-center rounded-lg bg-surface-100 dark:bg-surface-700">
+                    <File className="h-8 w-8 text-surface-400" />
+                  </div>
+                )}
+
+                <div className="flex items-start gap-3">
+                  <div className={clsx('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', categoryColors[doc.category] || categoryColors.other)}>
+                    <FileText className="h-4 w-4" strokeWidth={1.75} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-surface-800 dark:text-surface-100">{doc.name}</p>
+                    <Badge size="sm">{categoryLabels[doc.category]}</Badge>
+                  </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-surface-800 dark:text-surface-100">{doc.name}</p>
-                  <Badge size="sm">{categoryLabels[doc.category]}</Badge>
+                <div className="mt-3 flex gap-2">
+                  <a href={fileUrl} target="_blank" rel="noopener" className="flex-1">
+                    <Button variant="secondary" size="sm" className="w-full" iconLeft={<Eye />}>Открыть</Button>
+                  </a>
+                  <button
+                    onClick={() => { if (confirm('Удалить документ?')) deleteDocument.mutate(doc.id, { onSuccess: () => toast.success('Документ удалён') }) }}
+                    className="shrink-0 rounded-lg p-2 text-surface-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
-              <div className="mt-3 flex gap-2">
-                <a href={resolveFileUrl(doc.file_url)} target="_blank" rel="noopener" className="flex-1">
-                  <Button variant="secondary" size="sm" className="w-full" iconLeft={<Eye />}>Открыть</Button>
-                </a>
-                <button
-                  onClick={() => { if (confirm('Удалить документ?')) deleteDocument.mutate(doc.id, { onSuccess: () => toast.success('Документ удалён') }) }}
-                  className="shrink-0 rounded-lg p-2 text-surface-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 

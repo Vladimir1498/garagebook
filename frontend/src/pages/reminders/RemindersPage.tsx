@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Bell, Check, Plus, Trash2, Clock, CalendarClock } from 'lucide-react'
+import { Bell, Check, Plus, Trash2, Clock, CalendarClock, CalendarDays } from 'lucide-react'
 import { useRemindersList, useCompleteReminder, useDeleteReminder, useCreateReminder } from '../../hooks/useReminders'
 import { useCars } from '../../hooks/useCars'
 import Button from '../../components/ui/Button'
@@ -10,6 +10,7 @@ import Modal from '../../components/ui/Modal'
 import Input from '../../components/ui/Input'
 import DropdownSelect from '../../components/ui/DropdownSelect'
 import DatePicker from '../../components/ui/DatePicker'
+import ReminderCalendar from '../../components/reminders/ReminderCalendar'
 import toast from 'react-hot-toast'
 import { clsx } from 'clsx'
 
@@ -23,6 +24,7 @@ export default function RemindersPage() {
   const reminders = data?.data?.data || []
   const cars = carsData?.data?.data || []
   const [showCreate, setShowCreate] = useState(false)
+  const [view, setView] = useState<'list' | 'calendar'>('list')
 
   const overdue = reminders.filter(r => !r.is_completed && r.trigger_date && new Date(r.trigger_date) < new Date())
   const thisWeek = reminders.filter(r => !r.is_completed && r.trigger_date && (() => { const d = Math.ceil((new Date(r.trigger_date).getTime() - Date.now()) / 86400000); return d > 0 && d <= 7 })())
@@ -45,13 +47,21 @@ export default function RemindersPage() {
           <h1 className="text-xl font-bold tracking-tight text-surface-900 dark:text-white sm:text-2xl">{t('reminders.title')}</h1>
           <p className="mt-0.5 text-sm text-surface-500 dark:text-surface-400">{reminders.length} напоминаний</p>
         </div>
-        <Button onClick={() => setShowCreate(true)} iconLeft={<Plus />}>{t('reminders.add')}</Button>
+        <div className="flex gap-2">
+          <div className="flex rounded-lg border border-surface-200 dark:border-surface-600">
+            <button onClick={() => setView('list')} className={clsx('rounded-l-lg px-2.5 py-1.5 transition-colors', view === 'list' ? 'bg-primary-50 text-primary-500' : 'text-surface-400 hover:text-surface-600')}><Clock className="h-4 w-4" /></button>
+            <button onClick={() => setView('calendar')} className={clsx('rounded-r-lg px-2.5 py-1.5 transition-colors', view === 'calendar' ? 'bg-primary-50 text-primary-500' : 'text-surface-400 hover:text-surface-600')}><CalendarDays className="h-4 w-4" /></button>
+          </div>
+          <Button onClick={() => setShowCreate(true)} iconLeft={<Plus />}>{t('reminders.add')}</Button>
+        </div>
       </div>
 
       {isLoading ? (
         <div className="space-y-2">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-14" />)}</div>
       ) : reminders.length === 0 ? (
         <EmptyState icon={<Bell className="h-7 w-7" />} title="Нет напоминаний" description="Создайте первое напоминание" action={<Button onClick={() => setShowCreate(true)} iconLeft={<Plus />}>Создать</Button>} />
+      ) : view === 'calendar' ? (
+        <ReminderCalendar reminders={reminders} />
       ) : (
         <div className="space-y-5">
           {sections.map(({ title, items, color, dot }) => (
