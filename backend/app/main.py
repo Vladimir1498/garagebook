@@ -7,6 +7,9 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
@@ -17,6 +20,9 @@ from app.models.car import Car
 from app.routers import auth, users, cars, maintenance, expenses, documents, reminders, dashboard, analytics, admin, ai, obd, fleets, payments, public, notifications, push, export, search
 
 logger = logging.getLogger(__name__)
+
+# Rate limiter
+limiter = Limiter(key_func=get_remote_address)
 
 
 async def _check_reminders():
@@ -96,6 +102,9 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,

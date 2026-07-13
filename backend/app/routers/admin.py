@@ -130,9 +130,8 @@ async def list_users(user=Depends(get_current_admin), db: AsyncSession = Depends
 
 
 @router.post("/users/{user_id}/toggle-admin")
-async def toggle_admin(user_id: str, user=Depends(get_current_admin), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(User).where(User.id == user_id))
-    target = result.scalar_one_or_none()
+async def toggle_admin(user_id: UUID, user=Depends(get_current_admin), db: AsyncSession = Depends(get_db)):
+    target = await db.get(User, user_id)
     if not target:
         raise HTTPException(status_code=404, detail="User not found")
     if target.id == user.id:
@@ -143,9 +142,8 @@ async def toggle_admin(user_id: str, user=Depends(get_current_admin), db: AsyncS
 
 
 @router.post("/users/{user_id}/toggle-active")
-async def toggle_active(user_id: str, user=Depends(get_current_admin), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(User).where(User.id == user_id))
-    target = result.scalar_one_or_none()
+async def toggle_active(user_id: UUID, user=Depends(get_current_admin), db: AsyncSession = Depends(get_db)):
+    target = await db.get(User, user_id)
     if not target:
         raise HTTPException(status_code=404, detail="User not found")
     if target.id == user.id:
@@ -156,13 +154,12 @@ async def toggle_active(user_id: str, user=Depends(get_current_admin), db: Async
 
 
 @router.post("/users/{user_id}/set-tier")
-async def set_tier(user_id: str, body: dict, user=Depends(get_current_admin), db: AsyncSession = Depends(get_db)):
+async def set_tier(user_id: UUID, body: dict, user=Depends(get_current_admin), db: AsyncSession = Depends(get_db)):
     tier_str = body.get("tier", "free")
     if tier_str not in ("free", "pro", "fleet"):
         raise HTTPException(status_code=400, detail="Invalid tier")
 
-    result = await db.execute(select(User).where(User.id == user_id))
-    target = result.scalar_one_or_none()
+    target = await db.get(User, user_id)
     if not target:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -179,9 +176,8 @@ async def set_tier(user_id: str, body: dict, user=Depends(get_current_admin), db
 
 
 @router.delete("/users/{user_id}")
-async def delete_user(user_id: str, user=Depends(get_current_admin), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(User).where(User.id == user_id))
-    target = result.scalar_one_or_none()
+async def delete_user(user_id: UUID, user=Depends(get_current_admin), db: AsyncSession = Depends(get_db)):
+    target = await db.get(User, user_id)
     if not target:
         raise HTTPException(status_code=404, detail="User not found")
     if target.id == user.id:

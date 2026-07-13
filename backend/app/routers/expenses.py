@@ -70,3 +70,14 @@ async def delete_expense(expense_id: UUID, user: User = Depends(get_current_user
     await require_car_owner(expense.car_id, user.id, db)
     await repo.delete(expense_id)
     return {"message": "Deleted"}
+
+
+@router.patch("/{expense_id}", response_model=ExpenseResponse)
+async def update_expense(expense_id: UUID, data: ExpenseCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    repo = ExpenseRepository(db)
+    expense = await repo.get(expense_id)
+    if not expense:
+        raise HTTPException(status_code=404, detail="Expense not found")
+    await require_car_owner(expense.car_id, user.id, db)
+    updated = await repo.update(expense_id, **data.model_dump(exclude_unset=True))
+    return updated
