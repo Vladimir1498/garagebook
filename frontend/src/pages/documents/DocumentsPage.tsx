@@ -29,17 +29,19 @@ const categoryColors: Record<string, string> = {
 
 export default function DocumentsPage() {
   const { t } = useTranslation()
-  const { data, isLoading } = useDocumentsList()
   const { data: carsData } = useCars()
   const uploadDocument = useUploadDocument()
   const deleteDocument = useDeleteDocument()
 
-  const documents = data?.data?.data || []
   const cars = carsData?.data?.data || []
   const [selectedCar, setSelectedCar] = useState(cars[0]?.id || '')
   const [showTierModal, setShowTierModal] = useState(false)
   const [filterCategory, setFilterCategory] = useState('all')
   const [uploadCategory, setUploadCategory] = useState('other')
+
+  // Fetch documents filtered by selected car
+  const { data, isLoading } = useDocumentsList(selectedCar ? { car_id: selectedCar } : undefined)
+  const documents = data?.data?.data || []
 
   const filteredDocuments = useMemo(() => {
     if (filterCategory === 'all') return documents
@@ -67,7 +69,7 @@ export default function DocumentsPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <h1 className="text-xl font-bold tracking-tight text-surface-900 dark:text-white sm:text-2xl">{t('documents.title')}</h1>
-          <p className="mt-0.5 text-sm text-surface-500 dark:text-surface-400">{documents.length} документов</p>
+          <p className="mt-0.5 text-sm text-surface-500 dark:text-surface-400">{filteredDocuments.length} документов{selectedCar ? ` · ${cars.find(c => c.id === selectedCar)?.brand || ''}` : ''}</p>
         </div>
       </div>
 
@@ -91,7 +93,19 @@ export default function DocumentsPage() {
         </div>
       )}
 
-      {/* Filter */}
+      {/* Filter by car */}
+      {cars.length > 1 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <DropdownSelect
+            options={[{ value: '', label: 'Все автомобили' }, ...cars.map((c) => ({ value: c.id, label: `${c.brand} ${c.model}` }))]}
+            value={selectedCar}
+            onChange={setSelectedCar}
+            className="w-48"
+          />
+        </div>
+      )}
+
+      {/* Filter by category */}
       {documents.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           <button
