@@ -13,7 +13,7 @@ interface ScanResult {
 }
 
 interface ReceiptScannerProps {
-  onScan: (data: ScanResult) => void
+  onScan: (data: ScanResult, file: File) => void
 }
 
 export default function ReceiptScanner({ onScan }: ReceiptScannerProps) {
@@ -35,7 +35,7 @@ export default function ReceiptScanner({ onScan }: ReceiptScannerProps) {
       if (data.amount) parts.push(formatMoney(data.amount))
       if (data.date) parts.push(data.date)
       setResult(parts.length > 0 ? `Найдено: ${parts.join(' · ')}` : 'Чек распознан, но данные не извлечены')
-      onScan(data)
+      onScan(data, file)
     } catch {
       setError('Ошибка распознавания')
     } finally {

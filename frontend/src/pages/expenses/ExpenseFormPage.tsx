@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useCreateExpense } from '../../hooks/useExpenses'
+import { useUploadDocument } from '../../hooks/useDocuments'
 import { useCars } from '../../hooks/useCars'
 import PageWrapper from '../../components/layout/PageWrapper'
 import Input from '../../components/ui/Input'
@@ -24,6 +25,7 @@ export default function ExpenseFormPage() {
   const navigate = useNavigate()
   const { data: carsData } = useCars()
   const createExpense = useCreateExpense()
+  const uploadDocument = useUploadDocument()
 
   const cars = carsData?.data?.data || []
   const carOptions = cars.map((c) => ({ value: c.id, label: `${c.brand} ${c.model}` }))
@@ -33,8 +35,8 @@ export default function ExpenseFormPage() {
   const [amount, setAmount] = useState('')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [description, setDescription] = useState('')
+  const [scannedFile, setScannedFile] = useState<File | null>(null)
 
-  // Auto-select first car when data loads
   useEffect(() => {
     if (cars.length > 0 && !carId) {
       setCarId(cars[0].id)
@@ -45,10 +47,29 @@ export default function ExpenseFormPage() {
     e.preventDefault()
     if (!carId) { toast.error('Сначала добавьте автомобиль'); return }
     try {
-      await createExpense.mutateAsync({ car_id: carId, category: category as any, amount: Number(amount), date, description: description || undefined })
+      await createExpense.mutateAsync({
+        car_id: carId,
+        category: category as any,
+        amount: Number(amount),
+        date,
+        description: description || undefined,
+      })
+
+      // Auto-save receipt as document
+      if (scannedFile && carId) {
+        try {
+          const docName = `Чек ${date} — ${Number(amount).toLocaleString('ru')} ₽`
+          await uploadDocument.mutateAsync({ carId, file: scannedFile, category: 'receipt', name: docName })
+        } catch {
+          // Document save is best-effort, don't block expense creation
+        }
+      }
+
       toast.success('Расход добавлен')
       navigate('/expenses')
-    } catch (err: any) { toast.error(err.response?.data?.detail || 'Ошибка') }
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || 'Ошибка')
+    }
   }
 
   return (
@@ -57,12 +78,18 @@ export default function ExpenseFormPage() {
         <div className="rounded-2xl border border-surface-200 bg-white p-6 dark:border-surface-700 dark:bg-surface-800">
           {/* OCR Scanner */}
           <div className="mb-4 rounded-xl border border-dashed border-surface-200 bg-surface-50/50 p-4 dark:border-surface-600 dark:bg-surface-800/50">
-            <p className="mb-2 text-xs font-medium text-surface-500">Быстрое заполнение</p>
-            <ReceiptScanner onScan={(data) => {
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-medium text-surface-500">Быстрое заполнение</p>
+              {scannedFile && (
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400">Чек будет сохранён как документ</span>
+              )}
+            </div>
+            <ReceiptScanner onScan={(data, file) => {
               if (data.amount) setAmount(String(data.amount))
               if (data.date) setDate(data.date)
               if (data.category) setCategory(data.category)
               if (data.vendor) setDescription(data.vendor)
+              setScannedFile(file)
             }} />
           </div>
 
@@ -79,7 +106,7 @@ export default function ExpenseFormPage() {
         </div>
         <div className="flex justify-end gap-3">
           <Button variant="secondary" type="button" onClick={() => navigate('/expenses')}>Отмена</Button>
-          <Button type="submit" loading={createExpense.isPending}>Сохранить</Button>
+          <Button type="submit" loading={createExpense.isPending || uploadDocument.isPending}>Сохранить</Button>
         </div>
       </form>
     </PageWrapper>
