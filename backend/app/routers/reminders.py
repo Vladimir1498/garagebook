@@ -30,21 +30,25 @@ async def list_reminders(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    repo = ReminderRepository(db)
-    if car_id:
-        if not await _verify_car_ownership(car_id, user.id, db):
-            raise HTTPException(status_code=404, detail="Car not found")
-        reminders = await repo.get_car_reminders(car_id)
-    else:
-        # Get only reminders for user's cars
-        cars_result = await db.execute(select(Car.id).where(Car.user_id == user.id))
-        car_ids = [r[0] for r in cars_result.all()]
-        if not car_ids:
-            reminders = []
+    try:
+        repo = ReminderRepository(db)
+        if car_id:
+            if not await verify_car_ownership(car_id, user.id, db):
+                return {"data": [], "meta": {"page": 1, "limit": 100, "total": 0, "total_pages": 1}}
+            reminders = await repo.get_car_reminders(car_id)
         else:
-            result = await db.execute(select(Reminder).where(Reminder.car_id.in_(car_ids)))
-            reminders = list(result.scalars().all())
-    return {"data": [ReminderResponse.model_validate(r) for r in reminders], "meta": {"page": 1, "limit": 100, "total": len(reminders), "total_pages": 1}}
+            cars_result = await db.execute(select(Car.id).where(Car.user_id == user.id))
+            car_ids = [r[0] for r in cars_result.all()]
+            if not car_ids:
+                reminders = []
+            else:
+                result = await db.execute(select(Reminder).where(Reminder.car_id.in_(car_ids)))
+                reminders = list(result.scalars().all())
+        return {"data": [ReminderResponse.model_validate(r) for r in reminders], "meta": {"page": 1, "limit": 100, "total": len(reminders), "total_pages": 1}}
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"list_reminders error: {e}")
+        return {"data": [], "meta": {"page": 1, "limit": 100, "total": 0, "total_pages": 1}}
 
 
 @router.post("", response_model=ReminderResponse)
