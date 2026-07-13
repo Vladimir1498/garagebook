@@ -8,6 +8,7 @@ import Input from '../../components/ui/Input'
 import DropdownSelect from '../../components/ui/DropdownSelect'
 import DatePicker from '../../components/ui/DatePicker'
 import Button from '../../components/ui/Button'
+import ReceiptScanner from '../../components/ai/ReceiptScanner'
 import toast from 'react-hot-toast'
 import { getCurrencySymbol } from '../../utils/formatCurrency'
 
@@ -54,6 +55,17 @@ export default function ExpenseFormPage() {
     <PageWrapper title="Добавить расход" backTo="/expenses">
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="rounded-2xl border border-surface-200 bg-white p-6 dark:border-surface-700 dark:bg-surface-800">
+          {/* OCR Scanner */}
+          <div className="mb-4 rounded-xl border border-dashed border-surface-200 bg-surface-50/50 p-4 dark:border-surface-600 dark:bg-surface-800/50">
+            <p className="mb-2 text-xs font-medium text-surface-500">Быстрое заполнение</p>
+            <ReceiptScanner onScan={(data) => {
+              if (data.amount) setAmount(String(data.amount))
+              if (data.date) setDate(data.date)
+              if (data.category) setCategory(data.category)
+              if (data.vendor) setDescription(data.vendor)
+            }} />
+          </div>
+
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <DropdownSelect label="Автомобиль *" options={carOptions} value={carId} onChange={setCarId} disabled={carOptions.length <= 1} />
             <DropdownSelect label="Категория" options={categoryOptions} value={category} onChange={setCategory} />

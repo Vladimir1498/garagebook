@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     SMTP_FROM: str = "noreply@garagebook.app"
 
     OPENAI_API_KEY: str = ""
+    GROQ_API_KEY: str = ""
 
     VAPID_PRIVATE_KEY: str = ""
     VAPID_PUBLIC_KEY: str = ""

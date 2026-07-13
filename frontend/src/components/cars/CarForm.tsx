@@ -6,6 +6,7 @@ import DropdownSelect from '../ui/DropdownSelect'
 import DatePicker from '../ui/DatePicker'
 import Autocomplete from '../ui/Autocomplete'
 import Button from '../ui/Button'
+import VinScanner from '../ai/VinScanner'
 import { POPULAR_BRANDS, POPULAR_MODELS } from '../../utils/constants'
 
 const fuelOptions = [
@@ -29,7 +30,7 @@ interface CarFormProps {
 }
 
 export default function CarForm({ initialData, onSubmit, isLoading }: CarFormProps) {
-  const { register, handleSubmit, reset, control, watch, formState: { errors } } = useForm<CarCreate>({
+  const { register, handleSubmit, reset, control, watch, setValue, formState: { errors } } = useForm<CarCreate>({
     defaultValues: initialData ? {
       brand: initialData.brand,
       model: initialData.model,
@@ -106,7 +107,12 @@ export default function CarForm({ initialData, onSubmit, isLoading }: CarFormPro
             )}
           />
           <Input label="Год *" type="number" error={errors.year?.message} {...register('year', { required: 'Обязательное поле', min: 1900, max: new Date().getFullYear() + 1 })} />
-          <Input label="VIN" {...register('vin')} placeholder="17 символов" maxLength={17} />
+          <div>
+            <Input label="VIN" {...register('vin')} placeholder="17 символов" maxLength={17} />
+            <div className="mt-1.5">
+              <VinScanner onScan={(vin) => setValue('vin', vin)} />
+            </div>
+          </div>
           <Input label="Госномер" {...register('license_plate')} placeholder="А123БВ777" />
           <Controller
             name="fuel_type"

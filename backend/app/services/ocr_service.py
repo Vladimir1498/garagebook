@@ -1,0 +1,179 @@
+import base64
+import re
+import io
+import logging
+import httpx
+from app.core.config import settings
+
+logger = logging.getLogger(__name__)
+
+GROQ_API = "https://api.groq.com/openai/v1/chat/completions"
+
+
+async def scan_receipt(image_bytes: bytes, content_type: str = "image/jpeg") -> dict:
+    """
+    Scan a receipt image using Groq Vision (primary) or Tesseract (fallback).
+    Returns: {amount, date, vendor, category, raw_text}
+    """
+    # Try Groq first
+    try:
+        result = await _scan_with_groq(image_bytes, content_type)
+        if result.get("amount"):
+            result["source"] = "groq"
+            return result
+    except Exception as e:
+        logger.warning(f"Groq OCR failed: {e}")
+
+    # Fallback to Tesseract
+    try:
+        result = await _scan_with_tesseract(image_bytes)
+        result["source"] = "tesseract"
+        return result
+    except Exception as e:
+        logger.warning(f"Tesseract OCR failed: {e}")
+
+    return {"amount": None, "date": None, "vendor": None, "category": None, "raw_text": "", "source": "none"}
+
+
+async def _scan_with_groq(image_bytes: bytes, content_type: str) -> dict:
+    """Use Groq LLaMA Vision to scan receipt."""
+    api_key = settings.GROQ_API_KEY
+    if not api_key:
+        raise ValueError("GROQ_API_KEY not configured")
+
+    b64 = base64.b64encode(image_bytes).decode()
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        resp = await client.post(
+            GROQ_API,
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": "llama-3.2-11b-vision-preview",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": (
+                                    "Распознай чек/квитанцию на фото. "
+                                    "Верни ТОЛЬКО JSON без markdown без ```:\n"
+                                    '{"amount": число_суммы, "date": "ДД.ММ.ГГГГ", '
+                                    '"vendor": "название_места", "category": "одно_из: fuel/maintenance/repair/insurance/parking/fine/wash/tires/other"}\n'
+                                    "Если не можешь распознать поле — поставь null."
+                                ),
+                            },
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": f"data:{content_type};base64,{b64}"},
+                            },
+                        ],
+                    }
+                ],
+                "max_tokens": 300,
+                "temperature": 0.1,
+            },
+        )
+        resp.raise_for_status()
+        content = resp.json()["choices"][0]["message"]["content"]
+
+        # Parse JSON from response
+        import json
+        # Try to extract JSON from response
+        json_match = re.search(r'\{[^}]+\}', content, re.DOTALL)
+        if json_match:
+            return json.loads(json_match.group())
+        return {"amount": None, "date": None, "vendor": None, "category": None, "raw_text": content}
+
+
+async def _scan_with_tesseract(image_bytes: bytes) -> dict:
+    """Use Tesseract OCR as offline fallback."""
+    try:
+        import pytesseract
+        from PIL import Image
+    except ImportError:
+        raise ValueError("pytesseract not installed")
+
+    image = Image.open(io.BytesIO(image_bytes))
+    text = pytesseract.image_to_string(image, lang="rus+eng")
+
+    # Parse amount — find numbers that look like prices
+    amounts = re.findall(r'(\d[\d\s]*[.,]\d{2})\s*(?:₽|р\.?|руб)?', text)
+    amount = None
+    if amounts:
+        # Take the last match (usually total)
+        raw = amounts[-1].replace(' ', '').replace(',', '.')
+        try:
+            amount = float(raw)
+        except ValueError:
+            pass
+
+    # Parse date
+    dates = re.findall(r'(\d{2}[./\-]\d{2}[./\-]\d{2,4})', text)
+    date = dates[0] if dates else None
+    if date:
+        date = date.replace('/', '.').replace('-', '.')
+
+    # Guess category from keywords
+    category = "other"
+    text_lower = text.lower()
+    category_keywords = {
+        "fuel": ["бензин", "дт", "топливо", "аи-92", "аи-95", "аи-98", "дизель"],
+        "wash": ["мойка", "автомойка", "мойка авто"],
+        "parking": ["парковка", "стоянка", "паркинг"],
+        "fine": ["штраф", "нарушение", "гибдд"],
+        "tires": ["шины", "колёса", "резина", "диск"],
+        "repair": ["ремонт", "запчасти", "мастерская"],
+        "maintenance": ["обслуживание", "ТО", "замена", "масло", "фильтр"],
+    }
+    for cat, keywords in category_keywords.items():
+        if any(kw in text_lower for kw in keywords):
+            category = cat
+            break
+
+    return {"amount": amount, "date": date, "vendor": None, "category": category, "raw_text": text}
+
+
+async def scan_vin(image_bytes: bytes) -> dict:
+    """Scan VIN number from image using Groq or Tesseract."""
+    # Try Groq first
+    try:
+        api_key = settings.GROQ_API_KEY
+        if api_key:
+            b64 = base64.b64encode(image_bytes).decode()
+            async with httpx.AsyncClient(timeout=30) as client:
+                resp = await client.post(
+                    GROQ_API,
+                    headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                    json={
+                        "model": "llama-3.2-11b-vision-preview",
+                        "messages": [{"role": "user", "content": [
+                            {"type": "text", "text": "Найди VIN номер на фото. Верни ТОЛЬКО 17-символьный VIN без лишнего текста."},
+                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}},
+                        ]}],
+                        "max_tokens": 50,
+                    },
+                )
+                resp.raise_for_status()
+                vin = resp.json()["choices"][0]["message"]["content"].strip()[:17]
+                if len(vin) == 17:
+                    return {"vin": vin, "source": "groq"}
+    except Exception as e:
+        logger.warning(f"Groq VIN scan failed: {e}")
+
+    # Fallback Tesseract
+    try:
+        import pytesseract
+        from PIL import Image
+        image = Image.open(io.BytesIO(image_bytes))
+        text = pytesseract.image_to_string(image)
+        vin_match = re.search(r'[A-HJ-NPR-Z0-9]{17}', text.upper())
+        if vin_match:
+            return {"vin": vin_match.group(), "source": "tesseract"}
+    except Exception as e:
+        logger.warning(f"Tesseract VIN scan failed: {e}")
+
+    return {"vin": None, "source": "none"}
