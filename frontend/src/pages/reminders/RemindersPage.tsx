@@ -44,25 +44,27 @@ export default function RemindersPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <h1 className="text-xl font-bold tracking-tight text-surface-900 dark:text-white sm:text-2xl">{t('reminders.title')}</h1>
-          <p className="mt-0.5 text-sm text-surface-500 dark:text-surface-400">{reminders.length} напоминаний</p>
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold tracking-tight text-surface-900 dark:text-white sm:text-2xl">{t('reminders.title')}</h1>
+            <p className="mt-0.5 text-sm text-surface-500 dark:text-surface-400">{reminders.length} напоминаний</p>
+          </div>
+          <Button onClick={() => setShowCreate(true)} iconLeft={<Plus />}>{t('reminders.add')}</Button>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {cars.length > 1 && (
             <DropdownSelect
               options={[{ value: '', label: 'Все авто' }, ...cars.map((c) => ({ value: c.id, label: `${c.brand} ${c.model}` }))]}
               value={selectedCar}
               onChange={setSelectedCar}
-              className="w-40"
+              className="w-full sm:w-40"
             />
           )}
           <div className="flex rounded-lg border border-surface-200 dark:border-surface-600">
             <button onClick={() => setView('list')} className={clsx('rounded-l-lg px-2.5 py-1.5 transition-colors', view === 'list' ? 'bg-primary-50 text-primary-500' : 'text-surface-400 hover:text-surface-600')}><Clock className="h-4 w-4" /></button>
             <button onClick={() => setView('calendar')} className={clsx('rounded-r-lg px-2.5 py-1.5 transition-colors', view === 'calendar' ? 'bg-primary-50 text-primary-500' : 'text-surface-400 hover:text-surface-600')}><CalendarDays className="h-4 w-4" /></button>
           </div>
-          <Button onClick={() => setShowCreate(true)} iconLeft={<Plus />}>{t('reminders.add')}</Button>
         </div>
       </div>
 
