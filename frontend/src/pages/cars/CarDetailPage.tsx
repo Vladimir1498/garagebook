@@ -21,6 +21,17 @@ import { useMaintenanceList } from '../../hooks/useMaintenance'
 const fuelLabels: Record<string, string> = { petrol: 'Бензин', diesel: 'Дизель', electric: 'Электро', hybrid: 'Гибрид' }
 const transLabels: Record<string, string> = { manual: 'Механика', automatic: 'Автомат', cvt: 'Вариатор', robotic: 'Робот' }
 
+const serviceTypeLabels: Record<string, string> = {
+  oil_change: 'Замена масла', filter: 'Замена фильтра', spark_plugs: 'Свечи',
+  brakes: 'Тормоза', suspension: 'Подвеска', timing_belt: 'ГРМ',
+  engine_repair: 'Ремонт двигателя', custom: 'Другое',
+}
+
+const expenseCategoryLabels: Record<string, string> = {
+  fuel: 'Топливо', maintenance: 'ТО', repair: 'Ремонт', insurance: 'Страховка',
+  tax: 'Налог', parking: 'Парковка', fine: 'Штраф', wash: 'Мойка', tires: 'Шины', other: 'Прочее',
+}
+
 const tabs = [
   { id: 'overview', label: 'Обзор' },
   { id: 'maintenance', label: 'Обслуживание' },
@@ -195,8 +206,8 @@ function CarExpensesTab({ carId }: { carId: string }) {
             <DollarSign className="h-4 w-4" strokeWidth={1.75} />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-surface-800 dark:text-surface-100">{e.description || e.category}</p>
-            <p className="text-xs text-surface-400">{e.category} · {new Date(e.date).toLocaleDateString('ru')}</p>
+            <p className="truncate text-sm font-medium text-surface-800 dark:text-surface-100">{e.description || expenseCategoryLabels[e.category] || e.category}</p>
+            <p className="text-xs text-surface-400">{expenseCategoryLabels[e.category] || e.category} · {new Date(e.date).toLocaleDateString('ru')}</p>
           </div>
           <p className="shrink-0 text-sm font-semibold tabular-nums text-surface-800 dark:text-white">{formatMoney(e.amount)}</p>
         </div>
@@ -206,7 +217,7 @@ function CarExpensesTab({ carId }: { carId: string }) {
 }
 
 function CarRemindersTab({ carId }: { carId: string }) {
-  const { data } = useRemindersList({ car_id: carId })
+  const { data } = useRemindersList(carId)
   const reminders = data?.data?.data || []
 
   if (!reminders.length) {
@@ -247,7 +258,7 @@ function CarMaintenanceTab({ carId }: { carId: string }) {
             <Wrench className="h-4 w-4" strokeWidth={1.75} />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-surface-800 dark:text-surface-100">{r.service_type}</p>
+            <p className="truncate text-sm font-medium text-surface-800 dark:text-surface-100">{serviceTypeLabels[r.service_type] || r.service_type}</p>
             <p className="text-xs text-surface-400">{new Date(r.date).toLocaleDateString('ru')} · {r.mileage?.toLocaleString('ru')} км</p>
           </div>
           {r.cost > 0 && <p className="shrink-0 text-sm font-semibold tabular-nums text-surface-800 dark:text-white">{formatMoney(r.cost)}</p>}

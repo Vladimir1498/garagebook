@@ -16,15 +16,17 @@ import { clsx } from 'clsx'
 
 export default function RemindersPage() {
   const { t } = useTranslation()
-  const { data, isLoading } = useRemindersList()
   const { data: carsData } = useCars()
   const completeReminder = useCompleteReminder()
   const deleteReminder = useDeleteReminder()
 
-  const reminders = data?.data?.data || []
   const cars = carsData?.data?.data || []
+  const [selectedCar, setSelectedCar] = useState('')
   const [showCreate, setShowCreate] = useState(false)
   const [view, setView] = useState<'list' | 'calendar'>('list')
+
+  const { data, isLoading } = useRemindersList(selectedCar || undefined)
+  const reminders = data?.data?.data || []
 
   const overdue = reminders.filter(r => !r.is_completed && r.trigger_date && new Date(r.trigger_date) < new Date())
   const thisWeek = reminders.filter(r => !r.is_completed && r.trigger_date && (() => { const d = Math.ceil((new Date(r.trigger_date).getTime() - Date.now()) / 86400000); return d > 0 && d <= 7 })())
@@ -48,6 +50,14 @@ export default function RemindersPage() {
           <p className="mt-0.5 text-sm text-surface-500 dark:text-surface-400">{reminders.length} напоминаний</p>
         </div>
         <div className="flex gap-2">
+          {cars.length > 1 && (
+            <DropdownSelect
+              options={[{ value: '', label: 'Все авто' }, ...cars.map((c) => ({ value: c.id, label: `${c.brand} ${c.model}` }))]}
+              value={selectedCar}
+              onChange={setSelectedCar}
+              className="w-40"
+            />
+          )}
           <div className="flex rounded-lg border border-surface-200 dark:border-surface-600">
             <button onClick={() => setView('list')} className={clsx('rounded-l-lg px-2.5 py-1.5 transition-colors', view === 'list' ? 'bg-primary-50 text-primary-500' : 'text-surface-400 hover:text-surface-600')}><Clock className="h-4 w-4" /></button>
             <button onClick={() => setView('calendar')} className={clsx('rounded-r-lg px-2.5 py-1.5 transition-colors', view === 'calendar' ? 'bg-primary-50 text-primary-500' : 'text-surface-400 hover:text-surface-600')}><CalendarDays className="h-4 w-4" /></button>

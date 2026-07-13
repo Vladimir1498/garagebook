@@ -2,8 +2,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { remindersService } from '../services/reminders.service'
 import type { ReminderCreate } from '../types/reminder.types'
 
-export function useRemindersList(params?: Record<string, string | number>) {
-  return useQuery({ queryKey: ['reminders', params], queryFn: () => remindersService.list(params) })
+export function useRemindersList(carId?: string) {
+  return useQuery({
+    queryKey: ['reminders', carId || 'all'],
+    queryFn: () => remindersService.list(carId ? { car_id: carId } : undefined),
+  })
 }
 
 export function useCreateReminder() {
