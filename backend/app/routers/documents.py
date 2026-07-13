@@ -6,7 +6,7 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.config import settings
-from app.core.deps import get_current_user
+from app.core.deps import get_current_user, require_car_owner, verify_car_ownership
 from app.core.tiers import get_user_subscription, _get_subscription
 from app.models.user import User
 from app.models.car import Car
@@ -20,14 +20,6 @@ router = APIRouter(prefix="/api/v1/documents", tags=["documents"])
 # Allowed file extensions for upload
 ALLOWED_EXTENSIONS = {".pdf", ".jpg", ".jpeg", ".png", ".webp", ".gif"}
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
-
-
-async def _verify_car_ownership(car_id: UUID, user_id: UUID, db: AsyncSession) -> bool:
-    """Check that a car belongs to the given user."""
-    from sqlalchemy import select as sa_select
-    from app.models.car import Car as CarModel
-    result = await db.execute(sa_select(CarModel.id).where(CarModel.id == car_id, CarModel.user_id == user_id))
-    return result.scalar() is not None
 
 
 def _sanitize_filename(filename: str) -> str:
@@ -54,16 +46,13 @@ async def list_documents(
     repo = DocumentRepository(db)
     skip = (page - 1) * limit
     if car_id:
-        # Verify ownership
-        if not await _verify_car_ownership(car_id, user.id, db):
+        if not await verify_car_ownership(car_id, user.id, db):
             raise HTTPException(status_code=404, detail="Car not found")
         documents = await repo.get_car_documents(car_id, skip=skip, limit=limit)
         total_result = await db.execute(select(func.count(Document.id)).where(Document.car_id == car_id))
     else:
         # Get all user's car IDs first
-        from sqlalchemy import select as sa_select
-        from app.models.car import Car as CarModel
-        cars_result = await db.execute(sa_select(CarModel.id).where(CarModel.user_id == user.id))
+        cars_result = await db.execute(select(Car.id).where(Car.user_id == user.id))
         car_ids = [r[0] for r in cars_result.all()]
         if not car_ids:
             documents = []
@@ -73,7 +62,6 @@ async def list_documents(
                 "meta": {"page": page, "limit": limit, "total": 0, "total_pages": 1}
             }
         # Filter by user's cars
-        from sqlalchemy import or_
         documents_result = await db.execute(
             select(Document).where(Document.car_id.in_(car_ids)).offset(skip).limit(limit)
         )
@@ -93,8 +81,7 @@ async def get_document(doc_id: UUID, user: User = Depends(get_current_user), db:
     doc = await repo.get(doc_id)
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
-    # Verify ownership via car
-    if not await _verify_car_ownership(doc.car_id, user.id, db):
+    if not await verify_car_ownership(doc.car_id, user.id, db):
         raise HTTPException(status_code=404, detail="Document not found")
     return doc
 
@@ -115,7 +102,7 @@ async def upload_document(
         raise HTTPException(status_code=400, detail="Invalid car_id")
 
     # Verify car ownership
-    if not await _verify_car_ownership(car_uuid, user.id, db):
+    if not await verify_car_ownership(car_uuid, user.id, db):
         raise HTTPException(status_code=404, detail="Car not found")
 
     # Check document limit for free tier - count ALL documents across ALL user's cars
@@ -173,10 +160,7 @@ async def delete_document(doc_id: UUID, user: User = Depends(get_current_user), 
         raise HTTPException(status_code=404, detail="Document not found")
 
     # Verify document belongs to user's car
-    from sqlalchemy import select as sa_select
-    from app.models.car import Car as CarModel
-    result = await db.execute(sa_select(CarModel.id).where(CarModel.id == doc.car_id, CarModel.user_id == user.id))
-    if result.scalar() is None:
+    if not await verify_car_ownership(doc.car_id, user.id, db):
         raise HTTPException(status_code=404, detail="Document not found")
 
     # Delete file from disk

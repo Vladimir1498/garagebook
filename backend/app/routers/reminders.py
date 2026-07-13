@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
-from app.core.deps import get_current_user
+from app.core.deps import get_current_user, require_car_owner, verify_car_ownership
 from app.models.user import User
 from app.models.car import Car
 from app.models.reminder import Reminder
@@ -13,11 +13,6 @@ from app.schemas.reminder import ReminderCreate, ReminderResponse
 from app.services.push_service import send_push_to_user
 
 router = APIRouter(prefix="/api/v1/reminders", tags=["reminders"])
-
-
-async def _verify_car_ownership(car_id: UUID, user_id: UUID, db) -> bool:
-    result = await db.execute(select(Car.id).where(Car.id == car_id, Car.user_id == user_id))
-    return result.scalar() is not None
 
 
 async def _get_reminder_with_ownership(reminder_id: UUID, user_id: UUID, db) -> Reminder | None:
@@ -54,10 +49,7 @@ async def list_reminders(
 
 @router.post("", response_model=ReminderResponse)
 async def create_reminder(data: ReminderCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    # Verify car ownership
-    result = await db.execute(select(Car.id).where(Car.id == data.car_id, Car.user_id == user.id))
-    if result.scalar() is None:
-        raise HTTPException(status_code=404, detail="Car not found")
+    await require_car_owner(data.car_id, user.id, db)
 
     repo = ReminderRepository(db)
     reminder = await repo.create(**data.model_dump())
