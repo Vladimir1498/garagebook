@@ -59,11 +59,11 @@ async def _scan_with_groq(image_bytes: bytes, content_type: str) -> dict:
                             {
                                 "type": "text",
                                 "text": (
-                                    "Распознай чек/квитанцию на фото. "
-                                    "Верни ТОЛЬКО JSON без markdown без ```:\n"
-                                    '{"amount": число_суммы, "date": "ДД.ММ.ГГГГ", '
-                                    '"vendor": "название_места", "category": "одно_из: fuel/maintenance/repair/insurance/parking/fine/wash/tires/other"}\n'
-                                    "Если не можешь распознать поле — поставь null."
+                                    "Analyze this receipt image. "
+                                    "Return ONLY valid JSON, no markdown:\n"
+                                    '{"amount": number, "date": "DD.MM.YYYY", '
+                                    '"vendor": "store_name", "category": "one_of: fuel/maintenance/repair/insurance/parking/fine/wash/tires/other"}\n'
+                                    "If you cannot recognize a field, set it to null."
                                 ),
                             },
                             {
@@ -77,12 +77,14 @@ async def _scan_with_groq(image_bytes: bytes, content_type: str) -> dict:
                 "temperature": 0.1,
             },
         )
-        resp.raise_for_status()
+
+        if resp.status_code != 200:
+            logger.error(f"Groq API error {resp.status_code}: {resp.text[:500]}")
+            raise ValueError(f"Groq API error: {resp.status_code}")
+
         content = resp.json()["choices"][0]["message"]["content"]
 
-        # Parse JSON from response
         import json
-        # Try to extract JSON from response
         json_match = re.search(r'\{[^}]+\}', content, re.DOTALL)
         if json_match:
             return json.loads(json_match.group())
@@ -95,7 +97,13 @@ async def _scan_with_tesseract(image_bytes: bytes) -> dict:
         import pytesseract
         from PIL import Image
     except ImportError:
-        raise ValueError("pytesseract not installed")
+        raise ValueError("pytesseract not installed — run: apt install tesseract-ocr tesseract-ocr-rus")
+
+    # Check if tesseract binary is available
+    try:
+        pytesseract.get_tesseract_version()
+    except Exception:
+        raise ValueError("Tesseract binary not found in PATH — run: apt install tesseract-ocr")
 
     image = Image.open(io.BytesIO(image_bytes))
     text = pytesseract.image_to_string(image, lang="rus+eng")
