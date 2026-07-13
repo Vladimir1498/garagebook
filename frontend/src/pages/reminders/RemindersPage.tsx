@@ -61,7 +61,11 @@ export default function RemindersPage() {
       ) : reminders.length === 0 ? (
         <EmptyState icon={<Bell className="h-7 w-7" />} title="Нет напоминаний" description="Создайте первое напоминание" action={<Button onClick={() => setShowCreate(true)} iconLeft={<Plus />}>Создать</Button>} />
       ) : view === 'calendar' ? (
-        <ReminderCalendar reminders={reminders} />
+        <ReminderCalendar
+          reminders={reminders}
+          onComplete={(id) => completeReminder.mutate(id)}
+          onDelete={(id) => { if (confirm('Удалить напоминание?')) deleteReminder.mutate(id, { onSuccess: () => toast.success('Напоминание удалено') }) }}
+        />
       ) : (
         <div className="space-y-5">
           {sections.map(({ title, items, color, dot }) => (
