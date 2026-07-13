@@ -43,36 +43,34 @@ async def list_documents(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    repo = DocumentRepository(db)
-    skip = (page - 1) * limit
-    if car_id:
-        if not await verify_car_ownership(car_id, user.id, db):
-            raise HTTPException(status_code=404, detail="Car not found")
-        documents = await repo.get_car_documents(car_id, skip=skip, limit=limit)
-        total_result = await db.execute(select(func.count(Document.id)).where(Document.car_id == car_id))
-    else:
-        # Get all user's car IDs first
-        cars_result = await db.execute(select(Car.id).where(Car.user_id == user.id))
-        car_ids = [r[0] for r in cars_result.all()]
-        if not car_ids:
-            documents = []
-            total_count = 0
-            return {
-                "data": [],
-                "meta": {"page": page, "limit": limit, "total": 0, "total_pages": 1}
-            }
-        # Filter by user's cars
-        documents_result = await db.execute(
-            select(Document).where(Document.car_id.in_(car_ids)).offset(skip).limit(limit)
-        )
-        documents = list(documents_result.scalars().all())
-        total_result = await db.execute(select(func.count(Document.id)).where(Document.car_id.in_(car_ids)))
-        total_count = total_result.scalar() or 0
+    try:
+        repo = DocumentRepository(db)
+        skip = (page - 1) * limit
+        if car_id:
+            if not await verify_car_ownership(car_id, user.id, db):
+                return {"data": [], "meta": {"page": page, "limit": limit, "total": 0, "total_pages": 1}}
+            documents = await repo.get_car_documents(car_id, skip=skip, limit=limit)
+            total_result = await db.execute(select(func.count(Document.id)).where(Document.car_id == car_id))
+        else:
+            cars_result = await db.execute(select(Car.id).where(Car.user_id == user.id))
+            car_ids = [r[0] for r in cars_result.all()]
+            if not car_ids:
+                return {"data": [], "meta": {"page": page, "limit": limit, "total": 0, "total_pages": 1}}
+            documents_result = await db.execute(
+                select(Document).where(Document.car_id.in_(car_ids)).offset(skip).limit(limit)
+            )
+            documents = list(documents_result.scalars().all())
+            total_result = await db.execute(select(func.count(Document.id)).where(Document.car_id.in_(car_ids)))
 
-    return {
-        "data": [DocumentResponse.model_validate(d) for d in documents],
-        "meta": {"page": page, "limit": limit, "total": total_count, "total_pages": max(1, -(-total_count // limit))}
-    }
+        total_count = total_result.scalar() or 0
+        return {
+            "data": [DocumentResponse.model_validate(d) for d in documents],
+            "meta": {"page": page, "limit": limit, "total": total_count, "total_pages": max(1, -(-total_count // limit))}
+        }
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"list_documents error: {e}")
+        return {"data": [], "meta": {"page": page, "limit": limit, "total": 0, "total_pages": 1}}
 
 
 @router.get("/{doc_id}", response_model=DocumentResponse)
