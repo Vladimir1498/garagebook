@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useContext } from 'react'
-import { Bell, CheckCheck } from 'lucide-react'
+import { Bell, CheckCheck, Trash2 } from 'lucide-react'
 import { NotificationContext } from '../../contexts/NotificationContext'
 import { clsx } from 'clsx'
+import api from '../../services/api'
 
 export default function NotificationBell() {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useContext(NotificationContext)
@@ -15,6 +16,13 @@ export default function NotificationBell() {
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
+
+  const clearAll = async () => {
+    try {
+      await api.delete('/api/v1/notifications')
+      window.location.reload()
+    } catch {}
+  }
 
   return (
     <div className="relative" ref={ref}>
@@ -38,6 +46,12 @@ export default function NotificationBell() {
               <button onClick={markAllAsRead} className="flex items-center gap-1 text-xs font-medium text-primary-500 hover:text-primary-600">
                 <CheckCheck className="h-3 w-3" />
                 Прочитать все
+              </button>
+            )}
+            {notifications.length > 0 && (
+              <button onClick={clearAll} className="flex items-center gap-1 text-xs font-medium text-red-500 hover:text-red-600">
+                <Trash2 className="h-3 w-3" />
+                Очистить
               </button>
             )}
           </div>
