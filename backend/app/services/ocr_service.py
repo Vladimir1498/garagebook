@@ -77,9 +77,22 @@ async def _scan_with_groq(image_bytes: bytes, content_type: str) -> dict:
     logger.info(f"Groq OCR: image={len(image_bytes)}b, type={content_type}")
 
     prompt = (
-        "Analyze this receipt. Return ONLY valid JSON, no markdown:\n"
+        "Analyze this document/receipt. Return ONLY valid JSON, no markdown:\n"
         '{"amount": number, "date": "DD.MM.YYYY", '
-        '"vendor": "store_name", "category": "one_of: fuel/maintenance/repair/insurance/parking/fine/wash/tires/other"}\n'
+        '"vendor": "organization_or_store_name", '
+        '"category": "one of the categories below", '
+        '"description": "brief description of what this is"}\n\n'
+        "CATEGORIES (choose the best match):\n"
+        "- fuel: gas station receipt (BP, Shell, Lukoil, fuel, бензин, АИ-92, АИ-95, АИ-98, ДТ, топливо)\n"
+        "- fine: traffic fine or penalty (штраф, постановление, правонарушение, ГИБДД, ДПС, Информационное центр, оплата штрафа)\n"
+        "- repair: car repair (ремонт, запчасти, автосервис)\n"
+        "- maintenance: service/maintenance (ТО, замена масла, фильтра)\n"
+        "- insurance: insurance (ОСАГО, КАСКО, страховой полис)\n"
+        "- parking: parking (парковка, штраф-стоянка)\n"
+        "- wash: car wash (мойка, автосервис мойки)\n"
+        "- tires: tires/wheels (шины, диски, резина)\n"
+        "- tax: tax payment (налог, транспортный налог)\n"
+        "- other: anything else\n\n"
         "If you cannot recognize a field, set it to null."
     )
 
@@ -161,19 +174,31 @@ async def _scan_with_tesseract(image_bytes: bytes) -> dict:
     text_lower = text.lower()
     category_keywords = {
         "fuel": ["бензин", "дт", "топливо", "аи-92", "аи-95", "аи-98", "дизель"],
-        "wash": ["мойка", "автомойка", "мойка авто"],
+        "fine": ["штраф", "постановление", "правонарушение", "гибдд", "дпс", "нарушение", "превышение", "оплата штрафа"],
         "parking": ["парковка", "стоянка", "паркинг"],
-        "fine": ["штраф", "нарушение", "гибдд"],
+        "wash": ["мойка", "автомойка", "мойка авто"],
         "tires": ["шины", "колёса", "резина", "диск"],
         "repair": ["ремонт", "запчасти", "мастерская"],
         "maintenance": ["обслуживание", "ТО", "замена", "масло", "фильтр"],
+        "insurance": ["ОСАГО", "КАСКО", "страхов", "полис"],
+        "tax": ["налог", "транспортный налог", "налоговая"],
     }
     for cat, keywords in category_keywords.items():
         if any(kw in text_lower for kw in keywords):
             category = cat
             break
 
-    return {"amount": amount, "date": date, "vendor": None, "category": category, "raw_text": text}
+    # Extract vendor (organization name)
+    vendor = None
+    # Look for common patterns: "Организация: ...", first line, etc.
+    lines = [l.strip() for l in text.split('\n') if l.strip()]
+    if lines:
+        # First non-empty line is often the organization name
+        first_line = lines[0]
+        if len(first_line) > 3 and len(first_line) < 100:
+            vendor = first_line
+
+    return {"amount": amount, "date": date, "vendor": vendor, "category": category, "raw_text": text}
 
 
 async def scan_vin(image_bytes: bytes) -> dict:
