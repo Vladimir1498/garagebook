@@ -15,7 +15,7 @@ export default function Header() {
     <header className="relative z-40 flex h-14 items-center justify-between border-b border-surface-100 bg-white/80 px-4 backdrop-blur-xl dark:border-surface-700/50 dark:bg-surface-900/80 sm:px-6">
       {/* Mobile logo */}
       <div className="flex items-center gap-2 lg:hidden">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary-500 text-[11px] font-bold text-white">G</div>
+        <img src="/logo.svg" alt="GarageBook" className="h-7 w-7" />
         <span className="text-[15px] font-semibold tracking-tight text-surface-900 dark:text-white">GarageBook</span>
       </div>
 

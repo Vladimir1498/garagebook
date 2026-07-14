@@ -57,7 +57,7 @@ export default function Sidebar() {
     )}>
       {/* Logo */}
       <div className={clsx('flex h-14 items-center border-b border-surface-100 dark:border-surface-700/50', collapsed ? 'justify-center px-2' : 'gap-2.5 px-5')}>
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary-500 text-[11px] font-bold text-white">G</div>
+        <img src="/logo.svg" alt="GarageBook" className="h-7 w-7" />
         {!collapsed && <span className="text-[15px] font-semibold tracking-tight text-surface-900 dark:text-white">GarageBook</span>}
       </div>
 
