@@ -30,7 +30,7 @@ export default function RegisterPage() {
     <div className="flex min-h-screen items-center justify-center bg-surface-50 p-4 dark:bg-surface-950">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-500 text-xl font-bold text-white">G</div>
+          <img src="/logo.svg" alt="GarageBook" className="mx-auto h-12 w-12" />
           <h1 className="mt-4 text-2xl font-bold text-surface-900 dark:text-white">{t('auth.create_account')}</h1>
         </div>
 

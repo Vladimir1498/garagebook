@@ -30,7 +30,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm animate-scale-in">
         {/* Brand */}
         <div className="mb-8 text-center">
-          <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-primary-500 text-lg font-bold text-white shadow-lg shadow-primary-500/20">G</div>
+          <img src="/logo.svg" alt="GarageBook" className="mx-auto h-11 w-11" />
           <h1 className="mt-4 text-xl font-bold tracking-tight text-surface-900 dark:text-white">GarageBook</h1>
           <p className="mt-1 text-sm text-surface-500 dark:text-surface-400">Войдите в свой аккаунт</p>
         </div>
