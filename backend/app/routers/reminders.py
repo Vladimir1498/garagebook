@@ -1,6 +1,6 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import get_current_user, require_car_owner, verify_car_ownership
@@ -100,5 +100,9 @@ async def delete_reminder(reminder_id: UUID, user: User = Depends(get_current_us
     reminder = await _get_reminder_with_ownership(reminder_id, user.id, db)
     if not reminder:
         raise HTTPException(status_code=404, detail="Reminder not found")
+    # Delete associated notifications
+    await db.execute(
+        delete(Notification).where(Notification.user_id == user.id, Notification.link == "/reminders")
+    )
     await repo.delete(reminder_id)
     return {"message": "Deleted"}
